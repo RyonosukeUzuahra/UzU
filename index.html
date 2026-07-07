@@ -108,7 +108,7 @@
   .quicknav a:hover, .quicknav a:focus-visible { color: var(--text); border-color: var(--border); }
 
   /* ---------- shell ---------- */
-  .shell { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+  .shell { max-width: 1360px; margin: 0 auto; padding: 0 28px; }
   header.top {
     display: flex; justify-content: space-between; align-items: center;
     padding: 18px 0; border-bottom: 1px solid var(--border);
@@ -119,6 +119,10 @@
 
   /* ---------- hero ---------- */
   .hero { padding: 64px 0 40px; position: relative; }
+  .node-deco { margin-left: auto; color: var(--text-faint); opacity: 0.8; flex: none; }
+  .node-deco circle, .node-deco rect { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .node-deco path { fill: none; stroke: currentColor; stroke-width: 1; opacity: 0.7; }
+  @media (max-width: 640px) { .node-deco { display: none; } }
   .eyebrow {
     font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em;
     color: var(--text-muted); display: flex; align-items: center; gap: 10px; margin-bottom: 22px;
@@ -147,6 +151,14 @@
   .ring-wrap.small { width: 56px; height: 56px; }
   .ring-wrap.small .ring-label b { font-size: 13px; }
   .ring-wrap.small .ring-label small { font-size: 7px; }
+
+  /* blueprint corner brackets — geometric framing for chart cards */
+  .blueprint { position: relative; }
+  .blueprint .corner { position: absolute; width: 11px; height: 11px; pointer-events: none; }
+  .blueprint .corner.tl { top: -1px; left: -1px; border-top: 2px solid var(--border-strong); border-left: 2px solid var(--border-strong); }
+  .blueprint .corner.tr { top: -1px; right: -1px; border-top: 2px solid var(--border-strong); border-right: 2px solid var(--border-strong); }
+  .blueprint .corner.bl { bottom: -1px; left: -1px; border-bottom: 2px solid var(--border-strong); border-left: 2px solid var(--border-strong); }
+  .blueprint .corner.br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--border-strong); border-right: 2px solid var(--border-strong); }
 
   /* hero price chart */
   .chart-card { border: 1px solid var(--border); background: var(--bg-elevated); padding: 20px; }
@@ -262,7 +274,20 @@
   .sbar-row .fill.down { background: var(--down); }
   .sbar-row .cnt { font-family: var(--mono); font-size: 12px; text-align: right; }
 
-  .news-list { display: flex; flex-direction: column; gap: 12px; }
+  .news-scroll { position: relative; }
+  .news-scroll::after {
+    content: ""; position: absolute; left: 0; right: 6px; bottom: 0; height: 48px;
+    background: linear-gradient(to bottom, transparent, var(--bg)); pointer-events: none;
+  }
+  .news-list {
+    display: flex; flex-direction: column; gap: 12px;
+    max-height: 640px; overflow-y: auto; padding-right: 6px; padding-bottom: 8px;
+    scrollbar-width: thin; scrollbar-color: var(--text-faint) transparent;
+  }
+  .news-list::-webkit-scrollbar { width: 6px; }
+  .news-list::-webkit-scrollbar-track { background: transparent; }
+  .news-list::-webkit-scrollbar-thumb { background: var(--border); }
+  .news-list::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
   a.news-item {
     background: var(--bg-elevated); border: 1px solid var(--border); padding: 18px 20px;
     display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;
@@ -353,7 +378,20 @@
   </header>
 
   <section class="hero" style="border-top:none;">
-    <div class="eyebrow">XRP_STRATEGY_DASHBOARD — 分析 &amp; 運用戦略</div>
+    <div class="eyebrow">
+      XRP_STRATEGY_DASHBOARD — 分析 &amp; 運用戦略
+      <svg class="node-deco" width="130" height="26" viewBox="0 0 130 26" aria-hidden="true">
+        <path d="M8 13 C 18 13, 20 12, 32 12"></path>
+        <path d="M44 12 C 52 12, 52 18, 62 18"></path>
+        <path d="M62 18 C 72 18, 72 12, 82 12"></path>
+        <path d="M94 12 C 104 12, 106 13, 116 13"></path>
+        <circle cx="6" cy="13" r="3"></circle>
+        <rect x="32" y="6" width="12" height="12"></rect>
+        <circle cx="62" cy="18" r="3"></circle>
+        <rect x="82" y="6" width="12" height="12"></rect>
+        <circle cx="118" cy="13" r="3"></circle>
+      </svg>
+    </div>
     <div class="hero-grid">
       <div>
         <h1 class="headline">XRPの終着点は、<span class="u">20倍</span>。</h1>
@@ -376,7 +414,8 @@
           </div>
         </div>
       </div>
-      <div class="chart-card" id="chart">
+      <div class="chart-card blueprint" id="chart">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
         <div class="cap">直近の値動きと今週の節目 <span class="chart-badge">概念図</span></div>
         <canvas id="priceChart" class="price-chart"></canvas>
         <div class="chart-legend">
@@ -479,13 +518,14 @@
         <div class="cap">将来性スコア ランキング(0–100)</div>
         <div class="rank-list" id="rankList"></div>
       </div>
-      <div class="radar-card">
+      <div class="radar-card blueprint">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
         <div class="cap">XRP vs SOL vs XLM ― 5軸比較</div>
         <canvas id="radarChart" class="radar-canvas"></canvas>
         <div class="radar-legend">
-          <span><i class="rl xrp"></i>XRP(実線・塗り)</span>
-          <span><i class="rl sol"></i>SOL(破線)</span>
-          <span><i class="rl xlm"></i>XLM(点線)</span>
+          <span><i class="rl xrp"></i>XRP ■ (実線・塗り)</span>
+          <span><i class="rl sol"></i>SOL ● (破線)</span>
+          <span><i class="rl xlm"></i>XLM ◆ (点線)</span>
         </div>
       </div>
     </div>
@@ -516,13 +556,15 @@
     </div>
     <div class="news-grid">
       <div class="news-side">
-        <p class="sec-lede" style="margin-top:0;">国籍を問わず、直近で目新しい発信を抜粋・日本語訳。原文の趣旨を要約している。カードをクリックすると原文記事に飛ぶ。</p>
+        <p class="sec-lede" style="margin-top:0;">国籍を問わず、直近で重要度の高い発信を抜粋・日本語訳。原文の趣旨を要約している。カードをクリックすると原文記事に飛ぶ。右側は縦スクロールで全件表示。</p>
         <div class="sentiment-card">
-          <div class="cap">直近5件のセンチメント内訳</div>
+          <div class="cap">全<span id="newsCount">-</span>件のセンチメント内訳</div>
           <div class="sentiment-bars" id="sentimentBars"></div>
         </div>
       </div>
-      <div class="news-list" id="newsList"></div>
+      <div class="news-scroll">
+        <div class="news-list" id="newsList"></div>
+      </div>
     </div>
   </section>
 
@@ -652,11 +694,15 @@
 
   const news = [
     {date:"2026-07-06", src:"CoinDesk", sentiment:"neutral", quote:"出来高を伴った上昇でXRPは3%上昇。$1.14のブレイクアウトが支持線のテストに転じた。", note:"本日時点の速報。ブレイク→リテストの教科書的値動き。ここを死守できれば短期上昇継続の目安に。", link:"https://www.coindesk.com/markets/2026/07/06/xrp-rises-3-as-usd1-14-breakout-turns-into-support-test"},
+    {date:"2026-07", src:"Yahoo Finance", sentiment:"up", quote:"「RippleがVisa・Mastercard・Stripe・BlackRock等140社超が参加する新ドルステーブルコイン『Open USD』に参加。6月末には1日で約5,000件の新規ウォレットが作成され、3ヶ月ぶりの伸びを記録」", note:"価格が軟調な一方でオンチェーンの実需指標は改善という「ねじれ」を裏付ける一次情報。", link:"https://finance.yahoo.com/markets/crypto/articles/xrp-price-prediction-july-2026-200000605.html"},
     {date:"2026-06", src:"Brad Garlinghouse (Ripple CEO)", sentiment:"up", quote:"「金融工学(financial engineering)は長期的価値を生まない。実需(ユーティリティ)こそが価値を生む」", note:"ETFや投機的資金フローに頼らず実需こそ本質という軌道修正発言。強気派の合言葉に。", link:"https://coinpedia.org/news/everything-ripple-ceo-brad-garlinghouse-has-said-about-xrp-in-2026/"},
+    {date:"2026-05-12", src:"CoinDesk", sentiment:"up", quote:"「リップル関連ETFが1月以来最大の資金流入を記録」", note:"機関マネーの再流入が鮮明になった週次データ。ETF累計流入トレンドの転換点として要参照。", link:"https://www.coindesk.com/markets/2026/05/12/spot-xrp-etfs-attract-biggest-inflows-since-january"},
     {date:"2026-04", src:"X (@XRPLJapan)", sentiment:"up", quote:"「XRP Tokyo 2026 タイトルスポンサー発表 🎉 Rippleが今年のタイトルスポンサーとして参画することを発表できて光栄です」", note:"日本のXRPLコミュニティ主催イベントにRipple本社が正式協賛。年間$33兆規模のステーブルコイン決済予測も発表。", link:"https://x.com/XRPLJapan/status/2017140065869451560"},
+    {date:"2026 Q1", src:"National Law Review", sentiment:"up", quote:"「これでついに終わりだ:予想通りリップル訴訟は終結した」", note:"SECが控訴を取り下げ係争が事実上終結。当初$20億規模だった請求は最終的に$50M程度に圧縮。", link:"https://natlawreview.com/article/finally-end-ripple-case-concludes-predicted"},
     {date:"2026", src:"CCN", sentiment:"down", quote:"「Deutsche Bank・Société Généraleなどが導入したRippleのインフラは、実際にはXRPではなくRLUSDや法定通貨での決済に使われている」", note:"強気材料の陰に隠れがちな警鐘。「XRP=ブリッジ通貨」テーゼの実現度を測る継続ウォッチ項目。", link:"https://www.ccn.com/education/crypto/beyond-xrp-price-ripple-2026-matters/"},
     {date:"2026", src:"Yellow.com", sentiment:"up", quote:"「東京サミットを控え、ホエールの買い集めが過去10ヶ月で最大の水準に。オンチェーンのホエール・フロー30日平均も同期間で最高水準」", note:"イベント前に機関・大口筋が先回りして仕込んでいる可能性を示唆。", link:"https://yellow.com/news/xrp-whales-buying-surge"},
   ];
+  document.getElementById('newsCount').textContent = news.length;
   const sentimentMeta = { up: {label:"強気", cls:"up"}, neutral: {label:"中立", cls:"neutral"}, down: {label:"弱気", cls:"down"} };
   const newsList = document.getElementById('newsList');
   news.forEach(n=>{
@@ -739,6 +785,19 @@
     return { ctx, w: rect.width, h: rect.height };
   }
 
+  function drawNode(ctx, shape, x, y, size, color, fill){
+    ctx.beginPath();
+    if (shape === 'square') {
+      ctx.rect(x - size/2, y - size/2, size, size);
+    } else if (shape === 'diamond') {
+      ctx.moveTo(x, y - size/1.3); ctx.lineTo(x + size/1.3, y); ctx.lineTo(x, y + size/1.3); ctx.lineTo(x - size/1.3, y); ctx.closePath();
+    } else {
+      ctx.arc(x, y, size/2, 0, Math.PI * 2);
+    }
+    if (fill) { ctx.fillStyle = color; ctx.fill(); }
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
   function drawPriceChart(){
     const canvas = document.getElementById('priceChart');
     if (!canvas) return;
@@ -749,6 +808,7 @@
     const textFaint = themeColor('--text-faint');
     const textMuted = themeColor('--text-muted');
     const textColor = themeColor('--text');
+    const textStrong = themeColor('--border-strong');
     const upColor = themeColor('--up');
 
     const pad = { top: 14, right: 14, bottom: 22, left: 40 };
@@ -760,19 +820,30 @@
 
     const points = [[0,1.30],[5,1.27],[10,1.22],[14,1.18],[18,1.12],[22,1.07],[26,1.05],[29,1.04],[32,1.08],[35,1.10],[37,1.12],[39,1.145],[40,1.14]];
 
-    // grid levels
+    // corner ticks (blueprint frame)
+    ctx.strokeStyle = border; ctx.lineWidth = 1;
+    [[pad.left, pad.top, 1, 1], [W - pad.right, pad.top, -1, 1], [pad.left, pad.top + plotH, 1, -1], [W - pad.right, pad.top + plotH, -1, -1]].forEach(([px,py,dx,dy])=>{
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + 7*dx, py); ctx.moveTo(px, py); ctx.lineTo(px, py + 7*dy); ctx.stroke();
+    });
+
+    // grid levels: ruler-style ticks + faint line
     ctx.font = `10px ${FONT_SANS}`;
     ctx.textBaseline = 'middle';
     [[0.80,'$0.80'],[1.00,'$1.00'],[1.20,'$1.20']].forEach(([p,label])=>{
       const py = Y(p);
       ctx.beginPath();
-      ctx.setLineDash(p === 1.00 ? [] : [3,3]);
+      ctx.setLineDash(p === 1.00 ? [] : [1,4]);
       ctx.strokeStyle = border;
       ctx.lineWidth = 1;
       ctx.moveTo(pad.left, py);
       ctx.lineTo(W - pad.right, py);
       ctx.stroke();
       ctx.setLineDash([]);
+      // tick mark
+      ctx.beginPath();
+      ctx.strokeStyle = textFaint;
+      ctx.moveTo(pad.left - 4, py); ctx.lineTo(pad.left, py);
+      ctx.stroke();
       ctx.fillStyle = textFaint;
       ctx.textAlign = 'left';
       ctx.fillText(label, 2, py);
@@ -782,38 +853,39 @@
     ctx.fillStyle = upColor + '14';
     ctx.fillRect(pad.left, Y(1.06), plotW, Y(1.00) - Y(1.06));
 
-    // smooth price line
+    // geometric polyline (straight segments, not a smooth curve)
     ctx.beginPath();
     ctx.moveTo(X(points[0][0]), Y(points[0][1]));
-    for (let i = 1; i < points.length - 1; i++) {
-      const xc = (X(points[i][0]) + X(points[i+1][0])) / 2;
-      const yc = (Y(points[i][1]) + Y(points[i+1][1])) / 2;
-      ctx.quadraticCurveTo(X(points[i][0]), Y(points[i][1]), xc, yc);
-    }
-    const last = points[points.length - 1], prev = points[points.length - 2];
-    ctx.quadraticCurveTo(X(prev[0]), Y(prev[1]), X(last[0]), Y(last[1]));
+    for (let i = 1; i < points.length; i++) ctx.lineTo(X(points[i][0]), Y(points[i][1]));
     ctx.strokeStyle = textColor;
-    ctx.lineWidth = 2;
-    ctx.lineJoin = 'round';
+    ctx.lineWidth = 1.75;
+    ctx.lineJoin = 'miter';
     ctx.stroke();
 
     // area fill under line
+    const last = points[points.length - 1];
     ctx.lineTo(X(last[0]), pad.top + plotH);
     ctx.lineTo(X(points[0][0]), pad.top + plotH);
     ctx.closePath();
     ctx.fillStyle = textColor + '0d';
     ctx.fill();
 
-    // current price marker
+    // node markers at each vertex
+    points.forEach(([d, p], i)=>{
+      const isLast = i === points.length - 1;
+      drawNode(ctx, 'square', X(d), Y(p), isLast ? 9 : 5, isLast ? upColor : textStrong, isLast);
+    });
+
+    // crosshair leader to current price label
     const cx = X(last[0]), cy = Y(last[1]);
-    ctx.beginPath();
-    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-    ctx.fillStyle = upColor;
-    ctx.fill();
+    ctx.setLineDash([2,3]);
+    ctx.strokeStyle = textFaint;
+    ctx.beginPath(); ctx.moveTo(cx, cy - 6); ctx.lineTo(cx, pad.top); ctx.stroke();
+    ctx.setLineDash([]);
     ctx.font = `bold 11px ${FONT_SANS}`;
     ctx.fillStyle = textColor;
     ctx.textAlign = 'right';
-    ctx.fillText('$1.14', cx - 8, cy - 10);
+    ctx.fillText('$1.14', cx - 10, pad.top + 8);
 
     // date labels
     ctx.font = `10px ${FONT_SANS}`;
@@ -862,7 +934,7 @@
       ctx.stroke();
     });
 
-    // spokes + labels
+    // spokes + labels + ruler ticks
     ctx.font = `10px ${FONT_SANS}`;
     for (let i = 0; i < n; i++) {
       const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
@@ -872,14 +944,29 @@
       ctx.lineTo(ex, ey);
       ctx.strokeStyle = border;
       ctx.stroke();
-      const lx = cx + (radius + 12) * Math.cos(angle), ly = cy + (radius + 12) * Math.sin(angle);
+      // ruler tick marks along the spoke (perpendicular dashes at 25/50/75/100)
+      const perpX = Math.cos(angle + Math.PI / 2), perpY = Math.sin(angle + Math.PI / 2);
+      [0.25, 0.5, 0.75, 1].forEach(f=>{
+        const tx = cx + radius * f * Math.cos(angle), ty = cy + radius * f * Math.sin(angle);
+        ctx.beginPath();
+        ctx.moveTo(tx - perpX * 3, ty - perpY * 3);
+        ctx.lineTo(tx + perpX * 3, ty + perpY * 3);
+        ctx.strokeStyle = textFaint;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+      const lx = cx + (radius + 14) * Math.cos(angle), ly = cy + (radius + 14) * Math.sin(angle);
       ctx.fillStyle = textFaint;
       ctx.textAlign = Math.cos(angle) > 0.3 ? 'left' : (Math.cos(angle) < -0.3 ? 'right' : 'center');
       ctx.textBaseline = Math.sin(angle) > 0.3 ? 'top' : (Math.sin(angle) < -0.3 ? 'bottom' : 'middle');
       ctx.fillText(axes[i], lx, ly);
     }
 
-    function drawSeries(values, color, dash, fill){
+    // center reticle
+    ctx.beginPath(); ctx.moveTo(cx - 5, cy); ctx.lineTo(cx + 5, cy); ctx.moveTo(cx, cy - 5); ctx.lineTo(cx, cy + 5);
+    ctx.strokeStyle = textFaint; ctx.lineWidth = 1; ctx.stroke();
+
+    function drawSeries(values, color, dash, fill, nodeShape){
       ctx.beginPath();
       values.forEach((v, i)=>{
         const [px, py] = pt(i, v);
@@ -892,11 +979,15 @@
       ctx.stroke();
       if (fill) { ctx.fillStyle = color + '22'; ctx.fill(); }
       ctx.setLineDash([]);
+      values.forEach((v, i)=>{
+        const [px, py] = pt(i, v);
+        drawNode(ctx, nodeShape, px, py, nodeShape === 'square' ? 8 : 7, color, fill);
+      });
     }
 
-    drawSeries([15, 65, 10, 55, 55], textFaint, [2, 3], false);   // XLM
-    drawSeries([50, 55, 60, 35, 70], textMuted, [6, 4], false);   // SOL
-    drawSeries([62, 85, 75, 75, 68], textStrong, [], true);       // XRP
+    drawSeries([15, 65, 10, 55, 55], textFaint, [2, 3], false, 'diamond');   // XLM
+    drawSeries([50, 55, 60, 35, 70], textMuted, [6, 4], false, 'circle');    // SOL
+    drawSeries([62, 85, 75, 75, 68], textStrong, [], true, 'square');        // XRP
   }
 
   function redrawCharts(){ drawPriceChart(); drawRadar(); }
