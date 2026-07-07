@@ -8,16 +8,18 @@
     --bg: #f3f2ef;
     --bg-elevated: #ffffff;
     --bg-sunken: #eae9e5;
-    --border: #d6d5d0;
+    --border: #c7c5be;
     --border-strong: #17171a;
     --text: #17171a;
-    --text-muted: #6b6a66;
-    --text-faint: #96958f;
-    --up: #2f7d5b;
+    --text-muted: #55534e;
+    --text-faint: #7a7972;
+    --up: #227355;
     --up-bg: #e3ede7;
-    --down: #a8402c;
+    --down: #a1381f;
     --down-bg: #f2e4e0;
-    --dot: rgba(23,23,26,0.08);
+    --accent: #2955a6;
+    --accent-bg: #e5ecf9;
+    --dot: rgba(23,23,26,0.09);
     --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, "Segoe UI", sans-serif;
     --shadow: 0 1px 0 rgba(23,23,26,0.04);
@@ -26,33 +28,37 @@
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0a0a0b;
-      --bg-elevated: #131316;
+      --bg-elevated: #16161a;
       --bg-sunken: #000000;
-      --border: #2a2a2e;
-      --border-strong: #f0f0ee;
-      --text: #f0f0ee;
-      --text-muted: #9a999e;
-      --text-faint: #5c5b60;
+      --border: #3c3b41;
+      --border-strong: #f8f8f6;
+      --text: #f8f8f6;
+      --text-muted: #b3b2b8;
+      --text-faint: #85848b;
       --up: #7fd9ab;
       --up-bg: #17251d;
       --down: #e2897a;
       --down-bg: #2a1815;
-      --dot: rgba(240,240,238,0.07);
+      --accent: #6ea8ff;
+      --accent-bg: #14203a;
+      --dot: rgba(248,248,246,0.08);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0a0a0b; --bg-elevated: #131316; --bg-sunken: #000000;
-    --border: #2a2a2e; --border-strong: #f0f0ee;
-    --text: #f0f0ee; --text-muted: #9a999e; --text-faint: #5c5b60;
+    --bg: #0a0a0b; --bg-elevated: #16161a; --bg-sunken: #000000;
+    --border: #3c3b41; --border-strong: #f8f8f6;
+    --text: #f8f8f6; --text-muted: #b3b2b8; --text-faint: #85848b;
     --up: #7fd9ab; --up-bg: #17251d; --down: #e2897a; --down-bg: #2a1815;
-    --dot: rgba(240,240,238,0.07);
+    --accent: #6ea8ff; --accent-bg: #14203a;
+    --dot: rgba(248,248,246,0.08);
   }
   :root[data-theme="light"] {
     --bg: #f3f2ef; --bg-elevated: #ffffff; --bg-sunken: #eae9e5;
-    --border: #d6d5d0; --border-strong: #17171a;
-    --text: #17171a; --text-muted: #6b6a66; --text-faint: #96958f;
-    --up: #2f7d5b; --up-bg: #e3ede7; --down: #a8402c; --down-bg: #f2e4e0;
-    --dot: rgba(23,23,26,0.08);
+    --border: #c7c5be; --border-strong: #17171a;
+    --text: #17171a; --text-muted: #55534e; --text-faint: #7a7972;
+    --up: #227355; --up-bg: #e3ede7; --down: #a1381f; --down-bg: #f2e4e0;
+    --accent: #2955a6; --accent-bg: #e5ecf9;
+    --dot: rgba(23,23,26,0.09);
   }
 
   * { box-sizing: border-box; }
@@ -105,7 +111,7 @@
     text-decoration: none; padding: 6px 12px; border: 1px solid transparent; white-space: nowrap; flex: none;
     transition: color .15s ease, border-color .15s ease;
   }
-  .quicknav a:hover, .quicknav a:focus-visible { color: var(--text); border-color: var(--border); }
+  .quicknav a:hover, .quicknav a:focus-visible { color: var(--accent); border-color: var(--accent); }
 
   /* ---------- shell ---------- */
   .shell { max-width: 1360px; margin: 0 auto; padding: 0 28px; }
@@ -115,7 +121,19 @@
   }
   .brand { display:flex; align-items:center; gap:10px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; }
   .brand .dot { width:8px; height:8px; border-radius:50%; background: var(--border-strong); flex: none; }
-  .top-meta { font-family: var(--mono); font-size: 12px; color: var(--text-muted); text-align: right; }
+  .top-meta { font-family: var(--mono); font-size: 12.5px; color: var(--text-muted); text-align: right; }
+  .live-refresh {
+    font-family: var(--mono); font-size: 12px; color: var(--accent); background: var(--accent-bg);
+    border: 1px solid var(--accent); padding: 5px 12px; cursor: pointer; margin-bottom: 6px;
+    transition: opacity .15s ease;
+  }
+  .live-refresh:hover, .live-refresh:focus-visible { opacity: 0.75; }
+  .live-refresh:disabled { opacity: 0.5; cursor: wait; }
+  .live-dot { color: var(--accent); font-size: 8px; vertical-align: middle; }
+  @media (prefers-reduced-motion: no-preference) {
+    .live-dot { animation: live-pulse 1.8s ease-in-out infinite; }
+  }
+  @keyframes live-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
 
   /* ---------- hero ---------- */
   .hero { padding: 64px 0 40px; position: relative; }
@@ -135,7 +153,7 @@
     margin: 0 0 14px; text-wrap: balance;
   }
   h1.headline .u {
-    border-bottom: 3px solid var(--border-strong); padding-bottom: 2px;
+    border-bottom: 3px solid var(--accent); color: var(--accent); padding-bottom: 2px;
   }
   .hero-sub { color: var(--text-muted); font-size: 16px; max-width: 52ch; margin: 0 0 28px; }
 
@@ -165,20 +183,20 @@
   .chart-card .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
   .chart-badge { font-family: var(--mono); font-size: 9px; border: 1px solid var(--border); padding: 1px 6px; color: var(--text-faint); letter-spacing: 0.03em; }
   .price-chart { width: 100%; height: 200px; display: block; }
-  .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); margin-top: 12px; }
+  .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
   .chart-legend span { display: flex; align-items: center; gap: 6px; }
   .lg-swatch { width: 14px; height: 2px; display: inline-block; background: var(--text); }
   .lg-swatch.dash { background: none; border-top: 2px dashed var(--text-faint); }
   .lg-swatch.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--up); }
-  .chart-note { font-size: 10.5px; color: var(--text-faint); margin: 10px 0 0; }
+  .chart-note { font-size: 11.5px; color: var(--text-faint); margin: 10px 0 0; }
 
   /* weekly action band */
   .action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
   .action-card { background: var(--bg-elevated); padding: 20px; }
   .action-card .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 10px; }
   .action-card .big { font-family: var(--mono); font-weight: 800; font-size: 18px; margin-bottom: 8px; line-height: 1.3; }
-  .action-card p { font-size: 12.5px; color: var(--text-muted); margin: 0; }
-  .event-list { margin: 0; padding-left: 16px; font-size: 12.5px; color: var(--text); display: flex; flex-direction: column; gap: 6px; }
+  .action-card p { font-size: 13.5px; color: var(--text-muted); margin: 0; }
+  .event-list { margin: 0; padding-left: 16px; font-size: 13.5px; color: var(--text); display: flex; flex-direction: column; gap: 6px; }
 
   .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-top: 32px; }
   .stat { background: var(--bg-elevated); padding: 22px 20px; }
@@ -202,12 +220,12 @@
   .impact-body { min-width: 0; }
   .impact-title { font-weight: 700; font-size: 14px; margin: 0 0 6px; line-height: 1.4; }
   .impact-tags { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
-  .pill { font-family: var(--mono); font-size: 10px; letter-spacing: 0.03em; padding: 2px 7px; border: 1px solid var(--border); white-space: nowrap; }
+  .pill { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.03em; padding: 2px 7px; border: 1px solid var(--border); white-space: nowrap; }
   .pill.up { color: var(--up); background: var(--up-bg); border-color: transparent; }
   .pill.down { color: var(--down); background: var(--down-bg); border-color: transparent; }
   .pill.neutral { color: var(--text-muted); background: var(--bg-sunken); border-color: transparent; }
   .pill.status { color: var(--text-muted); }
-  .impact-desc { font-size: 12.5px; color: var(--text-muted); margin: 0; }
+  .impact-desc { font-size: 13.5px; color: var(--text-muted); margin: 0; }
 
   /* technical vs fundamental */
   .versus { display: grid; grid-template-columns: 1fr auto 1fr; gap: 28px; align-items: start; }
@@ -218,7 +236,7 @@
   .versus-col dl { padding: 18px 20px; margin: 0; }
   .versus-col dt { font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; color: var(--text-faint); margin-top: 14px; }
   .versus-col dt:first-child { margin-top: 0; }
-  .versus-col dd { margin: 4px 0 0; font-size: 13.5px; color: var(--text); }
+  .versus-col dd { margin: 4px 0 0; font-size: 14px; color: var(--text); }
   .versus-mid { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 18px; padding-top: 24px; }
   .versus-mid span { font-family: var(--mono); font-size: 12px; color: var(--text-faint); writing-mode: vertical-rl; letter-spacing: 0.1em; }
   .versus-mid-gauges { display: flex; flex-direction: column; gap: 10px; }
@@ -229,28 +247,28 @@
   .rank-card .cap, .radar-card .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 16px; }
   .rank-list { display: flex; flex-direction: column; gap: 13px; }
   .rank-row { display: grid; grid-template-columns: 44px 1fr 30px; align-items: center; gap: 10px; }
-  .rank-row .name { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
-  .rank-row.is-xrp .name { color: var(--text); font-weight: 800; }
+  .rank-row .name { font-family: var(--mono); font-size: 12.5px; color: var(--text-muted); }
+  .rank-row.is-xrp .name { color: var(--accent); font-weight: 800; }
   .rank-row .track { height: 10px; background: var(--bg-sunken); border: 1px solid var(--border); }
   .rank-row .fill { height: 100%; background: var(--text-faint); }
-  .rank-row.is-xrp .fill { background: var(--border-strong); }
-  .rank-row .val { font-family: var(--mono); font-size: 12px; text-align: right; }
+  .rank-row.is-xrp .fill { background: var(--accent); }
+  .rank-row .val { font-family: var(--mono); font-size: 12.5px; text-align: right; }
   .radar-canvas { width: 100%; height: 230px; display: block; }
-  .radar-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); margin-top: 12px; }
+  .radar-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
   .radar-legend span { display: flex; align-items: center; gap: 6px; }
   .rl { width: 10px; height: 10px; display: inline-block; }
-  .rl.xrp { background: var(--border-strong); }
+  .rl.xrp { background: var(--accent); }
   .rl.sol { background: var(--text-muted); }
   .rl.xlm { background: var(--text-faint); }
   @media (max-width: 780px) { .compare-visuals { grid-template-columns: 1fr; } }
 
   /* comparison table */
   .compare-wrap { overflow-x: auto; border: 1px solid var(--border); }
-  table.compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 880px; }
+  table.compare-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 880px; }
   .compare-table th, .compare-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
   .compare-table thead th { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em; color: var(--text-faint); background: var(--bg-sunken); white-space: nowrap; }
   .compare-table tbody tr:last-child td { border-bottom: none; }
-  .compare-table tbody tr.is-xrp { background: var(--bg-sunken); }
+  .compare-table tbody tr.is-xrp { background: var(--accent-bg); box-shadow: inset 3px 0 0 var(--accent); }
   .compare-table td.asset { font-weight: 700; white-space: nowrap; }
   .compare-table td.asset .ticker-sub { display:block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--text-faint); }
   .compare-table td.num { font-family: var(--mono); white-space: nowrap; }
@@ -266,13 +284,13 @@
   .sentiment-card .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 14px; }
   .sentiment-bars { display: flex; flex-direction: column; gap: 10px; }
   .sbar-row { display: grid; grid-template-columns: 52px 1fr 20px; align-items: center; gap: 10px; }
-  .sbar-row .lbl { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .sbar-row .lbl { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
   .sbar-row .track { height: 8px; background: var(--bg-sunken); border: 1px solid var(--border); }
   .sbar-row .fill { height: 100%; }
   .sbar-row .fill.up { background: var(--up); }
   .sbar-row .fill.neutral { background: var(--text-faint); }
   .sbar-row .fill.down { background: var(--down); }
-  .sbar-row .cnt { font-family: var(--mono); font-size: 12px; text-align: right; }
+  .sbar-row .cnt { font-family: var(--mono); font-size: 12.5px; text-align: right; }
 
   .news-scroll { position: relative; }
   .news-scroll::after {
@@ -294,17 +312,17 @@
     text-decoration: none; color: inherit; cursor: pointer;
     transition: border-color .15s ease, transform .15s ease, background .15s ease;
   }
-  a.news-item:hover, a.news-item:focus-visible { border-color: var(--border-strong); transform: translateX(-4px); background: var(--bg-sunken); }
-  a.news-item:focus-visible { outline: 2px solid var(--border-strong); outline-offset: 2px; }
-  .news-meta { font-family: var(--mono); font-size: 11px; color: var(--text-faint); display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  a.news-item:hover, a.news-item:focus-visible { border-color: var(--accent); transform: translateX(-4px); background: var(--bg-sunken); }
+  a.news-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .news-meta { font-family: var(--mono); font-size: 12px; color: var(--text-faint); display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
   .news-meta .src { color: var(--text-muted); }
   blockquote.news-quote {
     margin: 0 0 8px; padding-left: 14px; border-left: 2px solid var(--border-strong);
     font-size: 14.5px; font-weight: 600;
   }
-  .news-note { font-size: 12.5px; color: var(--text-muted); margin: 0; }
+  .news-note { font-size: 13.5px; color: var(--text-muted); margin: 0; }
   .news-arrow { font-family: var(--mono); font-size: 18px; color: var(--text-faint); transition: transform .15s ease, color .15s ease; }
-  a.news-item:hover .news-arrow, a.news-item:focus-visible .news-arrow { transform: translateX(3px); color: var(--text); }
+  a.news-item:hover .news-arrow, a.news-item:focus-visible .news-arrow { transform: translateX(3px); color: var(--accent); }
 
   @media (max-width: 980px) {
     .news-grid { grid-template-columns: 1fr; }
@@ -319,30 +337,30 @@
   .strategy-col .sh .horizon { font-family: var(--mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.06em; }
   .strategy-col .sh h3 { margin: 4px 0 0; font-size: 17px; }
   .strategy-col ul { margin: 0; padding: 18px 18px 20px; list-style: none; display: flex; flex-direction: column; gap: 12px; }
-  .strategy-col li { font-size: 13.5px; padding-left: 16px; position: relative; }
+  .strategy-col li { font-size: 14px; padding-left: 16px; position: relative; }
   .strategy-col li::before { content: "―"; position: absolute; left: 0; color: var(--text-faint); }
 
   /* checklist */
   .checklist { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; }
   .check-item { border: 1px solid var(--border); background: var(--bg-elevated); padding: 16px 18px; display: flex; gap: 12px; align-items: flex-start; }
   .check-box { width: 16px; height: 16px; border: 1.5px solid var(--border-strong); flex: none; margin-top: 3px; }
-  .check-item p { margin: 0; font-size: 13.5px; }
+  .check-item p { margin: 0; font-size: 14px; }
   .moonshot-target { display:flex; align-items:baseline; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
   .moonshot-target .arrow { font-family: var(--mono); font-size: 28px; color: var(--text-faint); }
   .moonshot-target .from, .moonshot-target .to { font-family: var(--mono); font-size: 34px; font-weight: 800; }
   .moonshot-target .to { color: var(--up); }
-  .moonshot-note { font-size: 13.5px; color: var(--text-muted); margin-top: 22px; max-width: 80ch; }
+  .moonshot-note { font-size: 14px; color: var(--text-muted); margin-top: 22px; max-width: 80ch; }
 
   /* tips */
   .tips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
   .tip { background: var(--bg-elevated); padding: 20px 22px; display: flex; gap: 16px; }
   .tip .num { font-family: var(--mono); font-size: 20px; color: var(--text-faint); flex: none; width: 34px; }
   .tip h4 { margin: 0 0 6px; font-size: 14.5px; }
-  .tip p { margin: 0; font-size: 13px; color: var(--text-muted); }
+  .tip p { margin: 0; font-size: 13.5px; color: var(--text-muted); }
 
   footer { padding: 40px 0 60px; }
   .foot-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 24px; }
-  .disclaimer { font-size: 12px; color: var(--text-faint); max-width: 62ch; }
+  .disclaimer { font-size: 12.5px; color: var(--text-faint); max-width: 62ch; }
   .page-label { font-family: var(--mono); font-size: 11px; color: var(--text-faint); white-space: nowrap; }
 
   @media (max-width: 880px) {
@@ -374,7 +392,10 @@
 <div class="shell">
   <header class="top">
     <div class="brand"><span class="dot"></span> XRP_STRATEGY_DASHBOARD <span style="color:var(--text-faint)">/ v1.0</span></div>
-    <div class="top-meta">最終更新 2026-07-06 23:40 JST<br>次回自動更新 毎日03:00 JST</div>
+    <div class="top-meta">
+      <button type="button" class="live-refresh" id="liveRefreshBtn">↻ 最新データを取得</button>
+      <div id="liveStatus">分析データ更新: 毎日 03:00 / 09:00 / 20:00 JST</div>
+    </div>
   </header>
 
   <section class="hero" style="border-top:none;">
@@ -398,9 +419,9 @@
         <p class="hero-sub">$1.14 → $22.8。テクニカルは弱気、ファンダメンタルは強気 ― このねじれの中に勝算を設計する。短期のレンジ攻防から、2030年以降を見据えたムーンショットまで。</p>
         <div class="stat-row">
           <div class="stat">
-            <div class="k">CURRENT</div>
-            <div class="v tnum">$1.14</div>
-            <div class="d">時価総額 #6 ・ 約$70.8B</div>
+            <div class="k">CURRENT <span class="live-dot" id="liveDot" hidden>●</span></div>
+            <div class="v tnum" id="statCurrentPrice">$1.14</div>
+            <div class="d" id="statCurrentDetail">時価総額 #6 ・ 約$70.8B</div>
           </div>
           <div class="stat">
             <div class="k">TARGET (20x)</div>
@@ -736,11 +757,11 @@
   });
 
   const cryptos = [
-    {name:"Bitcoin", ticker:"BTC", mcap:"$1.33兆", price:"$63,000", usecase:"デジタルゴールド・価値保存", reg:"最高", etf:"圧倒的 (IBIT等$50B超)", score:82, target:"$26.6兆(非現実的)", xrp:false},
-    {name:"Ethereum", ticker:"ETH", mcap:"$2,100億", price:"$1,750", usecase:"スマートコントラクト・DeFi基盤", reg:"高", etf:"堅調", score:74, target:"$4.2兆", xrp:false},
-    {name:"Solana", ticker:"SOL", mcap:"$470億", price:"$81", usecase:"高速決済・コンシューマーアプリ", reg:"中", etf:"拡大中", score:70, target:"$9,400億", xrp:false},
-    {name:"XRP", ticker:"XRP", mcap:"$708億", price:"$1.14", usecase:"銀行間クロスボーダー決済", reg:"高", etf:"堅調 (8週連続流入)", score:68, target:"$1.4兆(≒現BTC規模)", xrp:true},
-    {name:"Stellar", ticker:"XLM", mcap:"$60億", price:"$0.19", usecase:"個人・新興国送金のブリッジ", reg:"中", etf:"現状なし", score:55, target:"$1,200億", xrp:false},
+    {cgid:"bitcoin", name:"Bitcoin", ticker:"BTC", mcap:"$1.33兆", price:"$63,000", usecase:"デジタルゴールド・価値保存", reg:"最高", etf:"圧倒的 (IBIT等$50B超)", score:82, target:"$26.6兆(非現実的)", xrp:false},
+    {cgid:"ethereum", name:"Ethereum", ticker:"ETH", mcap:"$2,100億", price:"$1,750", usecase:"スマートコントラクト・DeFi基盤", reg:"高", etf:"堅調", score:74, target:"$4.2兆", xrp:false},
+    {cgid:"solana", name:"Solana", ticker:"SOL", mcap:"$470億", price:"$81", usecase:"高速決済・コンシューマーアプリ", reg:"中", etf:"拡大中", score:70, target:"$9,400億", xrp:false},
+    {cgid:"ripple", name:"XRP", ticker:"XRP", mcap:"$708億", price:"$1.14", usecase:"銀行間クロスボーダー決済", reg:"高", etf:"堅調 (8週連続流入)", score:68, target:"$1.4兆(≒現BTC規模)", xrp:true},
+    {cgid:"stellar", name:"Stellar", ticker:"XLM", mcap:"$60億", price:"$0.19", usecase:"個人・新興国送金のブリッジ", reg:"中", etf:"現状なし", score:55, target:"$1,200億", xrp:false},
   ];
   const compareBody = document.getElementById('compareBody');
   cryptos.forEach(c=>{
@@ -748,8 +769,8 @@
     if (c.xrp) tr.className = 'is-xrp';
     tr.innerHTML = `
       <td class="asset">${c.name}<span class="ticker-sub mono">${c.ticker}</span></td>
-      <td class="num tnum">${c.mcap}</td>
-      <td class="num tnum">${c.price}</td>
+      <td class="num tnum" data-cgid="${c.cgid}" data-field="mcap">${c.mcap}</td>
+      <td class="num tnum" data-cgid="${c.cgid}" data-field="price">${c.price}</td>
       <td>${c.usecase}</td>
       <td>${c.reg}</td>
       <td>${c.etf}</td>
@@ -785,6 +806,8 @@
     return { ctx, w: rect.width, h: rect.height };
   }
 
+  let liveData = { xrp: null, bitcoin: null, ethereum: null, solana: null, stellar: null, fetchedAt: null };
+
   function drawNode(ctx, shape, x, y, size, color, fill){
     ctx.beginPath();
     if (shape === 'square') {
@@ -810,15 +833,17 @@
     const textColor = themeColor('--text');
     const textStrong = themeColor('--border-strong');
     const upColor = themeColor('--up');
+    const accentColor = themeColor('--accent');
 
+    const currentPrice = (liveData.xrp && liveData.xrp.price) ? liveData.xrp.price : 1.14;
     const pad = { top: 14, right: 14, bottom: 22, left: 40 };
     const plotW = W - pad.left - pad.right;
     const plotH = H - pad.top - pad.bottom;
-    const priceMin = 0.75, priceMax = 1.32, dayMax = 40;
+    const priceMin = Math.min(0.75, currentPrice - 0.2), priceMax = Math.max(1.32, currentPrice + 0.15), dayMax = 40;
     const X = d => pad.left + (d / dayMax) * plotW;
     const Y = p => pad.top + (1 - (p - priceMin) / (priceMax - priceMin)) * plotH;
 
-    const points = [[0,1.30],[5,1.27],[10,1.22],[14,1.18],[18,1.12],[22,1.07],[26,1.05],[29,1.04],[32,1.08],[35,1.10],[37,1.12],[39,1.145],[40,1.14]];
+    const points = [[0,1.30],[5,1.27],[10,1.22],[14,1.18],[18,1.12],[22,1.07],[26,1.05],[29,1.04],[32,1.08],[35,1.10],[37,1.12],[39,1.145],[40,currentPrice]];
 
     // corner ticks (blueprint frame)
     ctx.strokeStyle = border; ctx.lineWidth = 1;
@@ -873,19 +898,19 @@
     // node markers at each vertex
     points.forEach(([d, p], i)=>{
       const isLast = i === points.length - 1;
-      drawNode(ctx, 'square', X(d), Y(p), isLast ? 9 : 5, isLast ? upColor : textStrong, isLast);
+      drawNode(ctx, 'square', X(d), Y(p), isLast ? 9 : 5, isLast ? accentColor : textStrong, isLast);
     });
 
     // crosshair leader to current price label
-    const cx = X(last[0]), cy = Y(last[1]);
+    const cx = X(last[0]), cy = Y(currentPrice);
     ctx.setLineDash([2,3]);
     ctx.strokeStyle = textFaint;
     ctx.beginPath(); ctx.moveTo(cx, cy - 6); ctx.lineTo(cx, pad.top); ctx.stroke();
     ctx.setLineDash([]);
     ctx.font = `bold 11px ${FONT_SANS}`;
-    ctx.fillStyle = textColor;
+    ctx.fillStyle = accentColor;
     ctx.textAlign = 'right';
-    ctx.fillText('$1.14', cx - 10, pad.top + 8);
+    ctx.fillText('$' + currentPrice.toFixed(2), cx - 10, pad.top + 8);
 
     // date labels
     ctx.font = `10px ${FONT_SANS}`;
@@ -907,7 +932,7 @@
     const border = themeColor('--border');
     const textFaint = themeColor('--text-faint');
     const textMuted = themeColor('--text-muted');
-    const textStrong = themeColor('--border-strong');
+    const accentColor = themeColor('--accent');
 
     const axes = ["時価総額規模","規制明確性","ETF/機関マネー","決済実需の具体性","将来性スコア"];
     const n = axes.length;
@@ -987,7 +1012,7 @@
 
     drawSeries([15, 65, 10, 55, 55], textFaint, [2, 3], false, 'diamond');   // XLM
     drawSeries([50, 55, 60, 35, 70], textMuted, [6, 4], false, 'circle');    // SOL
-    drawSeries([62, 85, 75, 75, 68], textStrong, [], true, 'square');        // XRP
+    drawSeries([62, 85, 75, 75, 68], accentColor, [], true, 'square');       // XRP
   }
 
   function redrawCharts(){ drawPriceChart(); drawRadar(); }
@@ -1035,13 +1060,88 @@
     tipsGrid.appendChild(div);
   });
 
-  const tickerItems = [
+  let tickerItems = [
     "XRP/USD $1.14","24H +0.98%","7D +8.70%","時価総額 #6 ($70.8B)",
     "ETF累計流入 $1.3〜1.5B (8週連続プラス)","RLUSD時価総額 $1.7B超",
     "ホエール保有比率 74%超","CLARITY Act 上院審議中","支持線 $1.00 ／ 抵抗線 $1.20",
   ];
-  const track = document.getElementById('tickerTrack');
-  const build = tickerItems.map((t,i)=>`<span${i===0?' class="hi"':''}>${t}</span>`).join('');
-  track.innerHTML = build + build;
+  function renderTicker(){
+    const track = document.getElementById('tickerTrack');
+    const build = tickerItems.map((t,i)=>`<span${i===0?' class="hi"':''}>${t}</span>`).join('');
+    track.innerHTML = build + build;
+  }
+  renderTicker();
+
+  // ---- live data refresh (works on the deployed GitHub Pages site; blocked by the Artifact preview's sandbox) ----
+  function fmtCap(usd){
+    if (usd >= 1e12) return '$' + (usd / 1e12).toFixed(2) + '兆';
+    return '$' + Math.round(usd / 1e8).toLocaleString('en-US') + '億';
+  }
+  function fmtPrice(usd){
+    if (usd >= 100) return '$' + Math.round(usd).toLocaleString('en-US');
+    return '$' + usd.toFixed(2);
+  }
+  function fmtPct(n){
+    if (n === null || n === undefined || isNaN(n)) return null;
+    return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+  }
+
+  function applyLiveData(){
+    const d = liveData;
+    if (d.xrp) {
+      document.getElementById('statCurrentPrice').textContent = fmtPrice(d.xrp.price);
+      document.getElementById('statCurrentDetail').textContent = `時価総額 #${d.xrp.rank} ・ 約${fmtCap(d.xrp.mcap)}`;
+      document.getElementById('liveDot').hidden = false;
+      const chg24 = fmtPct(d.xrp.chg24h), chg7 = fmtPct(d.xrp.chg7d);
+      tickerItems[0] = `XRP/USD ${fmtPrice(d.xrp.price)}`;
+      if (chg24) tickerItems[1] = `24H ${chg24}`;
+      if (chg7) tickerItems[2] = `7D ${chg7}`;
+      tickerItems[3] = `時価総額 #${d.xrp.rank} (${fmtCap(d.xrp.mcap)})`;
+    }
+    const byCgid = { bitcoin: d.bitcoin, ethereum: d.ethereum, solana: d.solana, ripple: d.xrp, stellar: d.stellar };
+    document.querySelectorAll('[data-cgid]').forEach(cell=>{
+      const v = byCgid[cell.dataset.cgid];
+      if (!v) return;
+      if (cell.dataset.field === 'mcap') cell.textContent = fmtCap(v.mcap);
+      if (cell.dataset.field === 'price') cell.textContent = fmtPrice(v.price);
+    });
+    renderTicker();
+    redrawCharts();
+  }
+
+  async function fetchLiveData(){
+    const btn = document.getElementById('liveRefreshBtn');
+    const statusEl = document.getElementById('liveStatus');
+    const prevLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '取得中…';
+    try {
+      const ids = 'ripple,bitcoin,ethereum,solana,stellar';
+      const controller = new AbortController();
+      const timer = setTimeout(()=>controller.abort(), 8000);
+      const res = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h,7d`, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('http ' + res.status);
+      const rows = await res.json();
+      const byId = {};
+      rows.forEach(r => byId[r.id] = r);
+      const pick = id => byId[id] ? {
+        price: byId[id].current_price, mcap: byId[id].market_cap, rank: byId[id].market_cap_rank,
+        chg24h: byId[id].price_change_percentage_24h_in_currency, chg7d: byId[id].price_change_percentage_7d_in_currency,
+      } : null;
+      liveData = { xrp: pick('ripple'), bitcoin: pick('bitcoin'), ethereum: pick('ethereum'), solana: pick('solana'), stellar: pick('stellar'), fetchedAt: new Date() };
+      applyLiveData();
+      const t = liveData.fetchedAt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      statusEl.textContent = `リアルタイム取得 ${t} 時点 ・ 分析データ更新: 毎日 03:00/09:00/20:00 JST`;
+    } catch (err) {
+      statusEl.textContent = '価格の即時取得はできませんでした(静的データを表示中) ・ 分析データ更新: 毎日 03:00/09:00/20:00 JST';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = prevLabel;
+    }
+  }
+
+  document.getElementById('liveRefreshBtn').addEventListener('click', fetchLiveData);
+  fetchLiveData();
 })();
 </script>
