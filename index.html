@@ -1,4 +1,6 @@
 <title>XRP戦略ダッシュボード — 20倍を狙う設計図</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
 <style>
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
@@ -19,6 +21,10 @@
     --down-bg: #f2e4e0;
     --accent: #2955a6;
     --accent-bg: #e5ecf9;
+    /* traffic-light rating scale: good → warn → bad */
+    --good: #1f6b4d; --good-bg: #e2eee8; --good-line: #2f9268;
+    --warn: #7d5800; --warn-bg: #f8f0d8; --warn-line: #c9971a;
+    --bad:  #9c3419; --bad-bg:  #f5e2dd; --bad-line:  #cf4b30;
     --dot: rgba(23,23,26,0.09);
     --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, "Segoe UI", sans-serif;
@@ -41,6 +47,9 @@
       --down-bg: #2a1815;
       --accent: #6ea8ff;
       --accent-bg: #14203a;
+      --good: #6fd3a2; --good-bg: #14251d; --good-line: #3f9a72;
+      --warn: #e8c46a; --warn-bg: #272014; --warn-line: #b98f2b;
+      --bad:  #ef8f7d; --bad-bg:  #2b1714; --bad-line:  #b6503a;
       --dot: rgba(248,248,246,0.08);
     }
   }
@@ -50,6 +59,9 @@
     --text: #f8f8f6; --text-muted: #b3b2b8; --text-faint: #85848b;
     --up: #7fd9ab; --up-bg: #17251d; --down: #e2897a; --down-bg: #2a1815;
     --accent: #6ea8ff; --accent-bg: #14203a;
+    --good: #6fd3a2; --good-bg: #14251d; --good-line: #3f9a72;
+    --warn: #e8c46a; --warn-bg: #272014; --warn-line: #b98f2b;
+    --bad:  #ef8f7d; --bad-bg:  #2b1714; --bad-line:  #b6503a;
     --dot: rgba(248,248,246,0.08);
   }
   :root[data-theme="light"] {
@@ -58,6 +70,9 @@
     --text: #17171a; --text-muted: #55534e; --text-faint: #7a7972;
     --up: #227355; --up-bg: #e3ede7; --down: #a1381f; --down-bg: #f2e4e0;
     --accent: #2955a6; --accent-bg: #e5ecf9;
+    --good: #1f6b4d; --good-bg: #e2eee8; --good-line: #2f9268;
+    --warn: #7d5800; --warn-bg: #f8f0d8; --warn-line: #c9971a;
+    --bad:  #9c3419; --bad-bg:  #f5e2dd; --bad-line:  #cf4b30;
     --dot: rgba(23,23,26,0.09);
   }
 
@@ -72,6 +87,9 @@
     font-family: var(--sans);
     line-height: 1.7;
     -webkit-font-smoothing: antialiased;
+    /* 出典が "news.bitcoin.com・crypto.news・theblock.co" のように長いASCII連続になるため、
+       折り返せない語で横スクロールが発生しないようにする */
+    overflow-wrap: break-word;
   }
   a { color: inherit; }
   ::selection { background: var(--border-strong); color: var(--bg); }
@@ -103,15 +121,108 @@
   .ticker-track span { padding: 0 28px; opacity: 0.92; }
   .ticker-track span.hi { opacity: 1; font-weight: 700; }
 
-  /* ---------- quick nav ---------- */
+  /* ---------- tab nav ---------- */
   .quicknav-bar { position: sticky; top: 33px; z-index: 40; background: var(--bg); border-bottom: 1px solid var(--border); }
-  nav.quicknav { display: flex; gap: 2px; overflow-x: auto; padding: 10px 28px; }
-  .quicknav a {
-    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.02em; color: var(--text-muted);
-    text-decoration: none; padding: 6px 12px; border: 1px solid transparent; white-space: nowrap; flex: none;
-    transition: color .15s ease, border-color .15s ease;
+  nav.quicknav { display: flex; gap: 2px; overflow-x: auto; padding: 8px 28px 0; scrollbar-width: thin; }
+  .quicknav button {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em; color: var(--text-muted);
+    background: none; padding: 8px 14px; border: 1px solid transparent; border-bottom: 2px solid transparent;
+    white-space: nowrap; flex: none; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
   }
-  .quicknav a:hover, .quicknav a:focus-visible { color: var(--accent); border-color: var(--accent); }
+  .quicknav button:hover { color: var(--text); background: var(--bg-sunken); }
+  .quicknav button[aria-selected="true"] {
+    color: var(--text); font-weight: 700; border-bottom-color: var(--border-strong); background: var(--bg-elevated);
+  }
+  .quicknav button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .tab-dots { display: flex; gap: 2px; }
+  .tab-dots i { width: 5px; height: 5px; border-radius: 50%; display: block; }
+  .tab-dots i.good { background: var(--good-line); }
+  .tab-dots i.warn { background: var(--warn-line); }
+  .tab-dots i.bad  { background: var(--bad-line); }
+  .tab-count { font-size: 10px; color: var(--text-faint); }
+
+  /* panels: only the active section is in the flow — this is what keeps scrolling short */
+  section[hidden] { display: none !important; }
+  .shell > section.is-panel { padding: 30px 0 44px; border-top: none; }
+
+  /* ---------- traffic-light primitives ---------- */
+  .tl-chip {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.03em; padding: 2px 8px;
+    white-space: nowrap; border: 1px solid transparent; font-weight: 700; flex: none;
+  }
+  .tl-chip.good { color: var(--good); background: var(--good-bg); border-color: var(--good-line); }
+  .tl-chip.warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn-line); }
+  .tl-chip.bad  { color: var(--bad);  background: var(--bad-bg);  border-color: var(--bad-line); }
+  .tl-chip.flat { color: var(--text-muted); background: var(--bg-sunken); border-color: var(--border); }
+  .tl-edge { border-left: 4px solid var(--border) !important; }
+  .tl-edge.good { border-left-color: var(--good-line) !important; }
+  .tl-edge.warn { border-left-color: var(--warn-line) !important; }
+  .tl-edge.bad  { border-left-color: var(--bad-line) !important; }
+  .fresh-chip {
+    font-family: var(--mono); font-size: 10.5px; color: var(--text-faint);
+    border: 1px solid var(--border); padding: 2px 7px; white-space: nowrap; flex: none;
+  }
+  .fresh-chip.is-new { color: var(--accent); border-color: var(--accent); background: var(--accent-bg); font-weight: 700; }
+
+  /* ---------- overview summary panel ---------- */
+  .summary { border: 1px solid var(--border-strong); background: var(--bg-elevated); margin-bottom: 24px; }
+  .summary-head {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+  }
+  .summary-head h2 { font-size: 15px; margin: 0; letter-spacing: -0.01em; }
+  .summary-head .spacer { margin-left: auto; }
+  .tl-scale { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tl-scale .seg { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12px; }
+  .tl-scale .seg b { font-size: 15px; }
+  .tl-scale .sw { width: 10px; height: 10px; display: block; }
+  .tl-scale .sw.good { background: var(--good-line); }
+  .tl-scale .sw.warn { background: var(--warn-line); }
+  .tl-scale .sw.bad  { background: var(--bad-line); }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); }
+  .summary-cell { background: var(--bg-elevated); padding: 14px 18px; min-width: 0; }
+  .summary-cell .meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .summary-cell .ttl { font-size: 13.5px; font-weight: 700; margin: 0 0 4px; line-height: 1.45; }
+  .summary-cell .sub {
+    font-size: 12.5px; color: var(--text-muted); margin: 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  @media (max-width: 880px) { .summary-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- collapsible long prose ---------- */
+  .clamp { position: relative; }
+  .clamp .clamp-body {
+    display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+    -webkit-line-clamp: var(--lines, 3);
+  }
+  .clamp.is-open .clamp-body { display: block; overflow: visible; }
+  /* 行数ではなく高さで畳む版(リストや複数要素をまとめて畳む用) */
+  .clamp.h-clamp .clamp-body { display: block; -webkit-line-clamp: none; max-height: var(--maxh, 240px); overflow: hidden; }
+  .clamp.h-clamp.is-open .clamp-body { max-height: none; -webkit-mask-image: none; mask-image: none; }
+  .clamp.h-clamp:not(.is-open) .clamp-body {
+    -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+  }
+  .clamp-btn {
+    font-family: var(--mono); font-size: 11px; color: var(--accent); background: none;
+    border: none; border-bottom: 1px solid var(--accent); padding: 0; margin-top: 6px; cursor: pointer;
+  }
+  .clamp-btn:hover { opacity: 0.7; }
+  .clamp-btn::before { content: "▸ "; }
+  .clamp.is-open .clamp-btn::before { content: "▾ "; }
+
+  /* dense mode for the impact grid */
+  .impact-grid.dense { grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 10px; }
+  .impact-card { align-items: flex-start; }
+  .impact-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 6px; }
+  .action-card > .tl-chip { display: inline-block; margin-bottom: 10px; }
+  .sort-toggle { display: flex; gap: 0; border: 1px solid var(--border); }
+  .sort-toggle button {
+    font-family: var(--mono); font-size: 11px; padding: 4px 11px; background: var(--bg-elevated);
+    color: var(--text-muted); border: none; cursor: pointer;
+  }
+  .sort-toggle button[aria-pressed="true"] { background: var(--border-strong); color: var(--bg); font-weight: 700; }
 
   /* ---------- shell ---------- */
   .shell { max-width: 1360px; margin: 0 auto; padding: 0 28px; }
@@ -163,6 +274,9 @@
   .ring-fg { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
   .ring-fg.up { stroke: var(--up); }
   .ring-fg.down { stroke: var(--down); }
+  .ring-fg.good { stroke: var(--good-line); }
+  .ring-fg.warn { stroke: var(--warn-line); }
+  .ring-fg.bad  { stroke: var(--bad-line); }
   .ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .ring-label b { font-family: var(--mono); font-size: 22px; }
   .ring-label small { font-family: var(--mono); font-size: 10px; color: var(--text-muted); }
@@ -219,7 +333,12 @@
   .impact-card .ring-label small { font-size: 8px; }
   .impact-body { min-width: 0; }
   .impact-title { font-weight: 700; font-size: 14px; margin: 0 0 6px; line-height: 1.4; }
-  .impact-tags { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .impact-tags { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; min-width: 0; }
+  /* status は日次更新で長文が入ることがあるため、はみ出さずに2行で打ち切る */
+  .impact-card .pill.status, .summary-cell .pill.status {
+    white-space: normal; line-height: 1.55; max-width: 100%; min-width: 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
   .pill { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.03em; padding: 2px 7px; border: 1px solid var(--border); white-space: nowrap; }
   .pill.up { color: var(--up); background: var(--up-bg); border-color: transparent; }
   .pill.down { color: var(--down); background: var(--down-bg); border-color: transparent; }
@@ -230,7 +349,7 @@
   /* technical vs fundamental */
   .versus { display: grid; grid-template-columns: 1fr auto 1fr; gap: 28px; align-items: start; }
   .versus-col { border: 1px solid var(--border); background: var(--bg-elevated); }
-  .versus-col .vh { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .versus-col .vh { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
   .versus-col .vh h3 { margin: 0; font-size: 16px; }
   .versus-col .vh .score { font-family: var(--mono); font-size: 13px; color: var(--text-muted); }
   .versus-col dl { padding: 18px 20px; margin: 0; }
@@ -250,8 +369,13 @@
   .rank-row .name { font-family: var(--mono); font-size: 12.5px; color: var(--text-muted); }
   .rank-row.is-xrp .name { color: var(--accent); font-weight: 800; }
   .rank-row .track { height: 10px; background: var(--bg-sunken); border: 1px solid var(--border); }
-  .rank-row .fill { height: 100%; background: var(--text-faint); }
-  .rank-row.is-xrp .fill { background: var(--accent); }
+  .rank-row .track { display: block; }
+  .rank-row .fill { display: block; height: 100%; background: var(--text-faint); }
+  .rank-row .fill.good { background: var(--good-line); }
+  .rank-row .fill.warn { background: var(--warn-line); }
+  .rank-row .fill.bad  { background: var(--bad-line); }
+  .rank-row.is-xrp .name { text-decoration: underline; text-underline-offset: 3px; }
+  .compare-table td .tl-chip { margin-left: 8px; }
   .rank-row .val { font-family: var(--mono); font-size: 12.5px; text-align: right; }
   .radar-canvas { width: 100%; height: 230px; display: block; }
   .radar-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
@@ -273,6 +397,10 @@
   .compare-table td.asset .ticker-sub { display:block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--text-faint); }
   .compare-table td.num { font-family: var(--mono); white-space: nowrap; }
   .compare-table td .score-cell { display: flex; align-items: center; gap: 10px; }
+  /* 日次更新で長文が入る列は3行で打ち切り、表の縦伸びを抑える */
+  .compare-table .cell-clamp {
+    max-width: 360px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
   .compare-table .mini-ring { width: 40px; height: 40px; flex: none; position: relative; }
   .compare-table .mini-ring .ring-label b { font-size: 12px; }
   .compare-table .mini-ring .ring-label small { display: none; }
@@ -285,11 +413,11 @@
   .sentiment-bars { display: flex; flex-direction: column; gap: 10px; }
   .sbar-row { display: grid; grid-template-columns: 52px 1fr 20px; align-items: center; gap: 10px; }
   .sbar-row .lbl { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
-  .sbar-row .track { height: 8px; background: var(--bg-sunken); border: 1px solid var(--border); }
-  .sbar-row .fill { height: 100%; }
-  .sbar-row .fill.up { background: var(--up); }
-  .sbar-row .fill.neutral { background: var(--text-faint); }
-  .sbar-row .fill.down { background: var(--down); }
+  .sbar-row .track { display: block; height: 8px; background: var(--bg-sunken); border: 1px solid var(--border); }
+  .sbar-row .fill { display: block; height: 100%; }
+  .sbar-row .fill.up { background: var(--good-line); }
+  .sbar-row .fill.neutral { background: var(--warn-line); }
+  .sbar-row .fill.down { background: var(--bad-line); }
   .sbar-row .cnt { font-family: var(--mono); font-size: 12.5px; text-align: right; }
 
   .news-scroll { position: relative; }
@@ -299,7 +427,7 @@
   }
   .news-list {
     display: flex; flex-direction: column; gap: 12px;
-    max-height: 640px; overflow-y: auto; padding-right: 6px; padding-bottom: 8px;
+    max-height: 78vh; overflow-y: auto; padding-right: 6px; padding-bottom: 8px;
     scrollbar-width: thin; scrollbar-color: var(--text-faint) transparent;
   }
   .news-list::-webkit-scrollbar { width: 6px; }
@@ -363,6 +491,12 @@
   .disclaimer { font-size: 12.5px; color: var(--text-faint); max-width: 62ch; }
   .page-label { font-family: var(--mono); font-size: 11px; color: var(--text-faint); white-space: nowrap; }
 
+  @media (max-width: 620px) {
+    .shell { padding: 0 16px; }
+    nav.quicknav { padding: 8px 16px 0; }
+    .summary-head { padding: 12px 16px; }
+    .impact-grid.dense { grid-template-columns: 1fr; }
+  }
   @media (max-width: 880px) {
     .hero-grid, .versus, .strategy-cols, .tips { grid-template-columns: 1fr; }
     .versus-mid { display: none; }
@@ -377,16 +511,7 @@
 </div>
 
 <div class="quicknav-bar">
-  <nav class="shell quicknav">
-    <a href="#action">今週のアクション</a>
-    <a href="#impact">価格インパクト</a>
-    <a href="#analysis">テクニカル×ファンダ</a>
-    <a href="#compare">他通貨比較</a>
-    <a href="#news">ニュース</a>
-    <a href="#strategy">運用戦略</a>
-    <a href="#moonshot">20倍条件</a>
-    <a href="#tips">戦略家の提言</a>
-  </nav>
+  <nav class="shell quicknav" id="tabNav" role="tablist" aria-label="セクション切り替え"></nav>
 </div>
 
 <div class="shell">
@@ -398,7 +523,16 @@
     </div>
   </header>
 
-  <section class="hero" style="border-top:none;">
+  <section class="hero" id="overview" style="border-top:none;">
+    <div class="summary" id="summaryPanel" hidden>
+      <div class="summary-head">
+        <h2>今日の要点</h2>
+        <div class="tl-scale" id="tlScale"></div>
+        <div class="spacer"></div>
+        <div class="tag mono" style="font-size:11px;color:var(--text-faint)">鮮度が高い順 ・ 緑=追い風 / 黄=影響度中以下の逆風 / 赤=影響度大の逆風</div>
+      </div>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
     <div class="eyebrow">
       XRP_STRATEGY_DASHBOARD — 分析 &amp; 運用戦略
       <svg class="node-deco" width="130" height="26" viewBox="0 0 130 26" aria-hidden="true">
@@ -498,10 +632,13 @@
   <section id="impact">
     <div class="sec-head">
       <h2>01 ／ 価格インパクト・パラメータ</h2>
-      <div class="tag">IMPACT SCORE 0–100 ・ 直近〜6ヶ月</div>
+      <div class="sort-toggle" id="impactSort">
+        <button type="button" data-sort="fresh" aria-pressed="true">鮮度順</button>
+        <button type="button" data-sort="tier" aria-pressed="false">評価順</button>
+      </div>
     </div>
-    <p class="sec-lede">価格に影響を与えうる材料を、影響度の強度(0=軽微 / 100=市場構造を変えるレベル)でスコア化。色は方向(強気=緑・弱気=赤)、枠内数値はインパクトの大きさを示す。</p>
-    <div class="impact-grid" id="impactGrid"></div>
+    <p class="sec-lede">価格に影響を与えうる材料を、影響度の強度(0=軽微 / 100=市場構造を変えるレベル)でスコア化。カード左端の色は評価で、<b style="color:var(--good)">緑=追い風</b> / <b style="color:var(--warn)">黄=逆風だが影響度は中程度以下</b> / <b style="color:var(--bad)">赤=影響度の大きい逆風</b>。既定では情報の新しい順に並ぶ。本文は3行に折りたたんでいる(「続きを読む」で全文)。</p>
+    <div class="impact-grid dense" id="impactGrid"></div>
   </section>
 
   <section id="analysis">
@@ -673,7 +810,8 @@
     const radius = (size - stroke) / 2;
     const c = 2 * Math.PI * radius;
     const offset = c * (1 - score/100);
-    const cls = dir === 'up' ? 'up' : 'down';
+    // dir には 'up'/'down' に加え、信号色の 'good'/'warn'/'bad' も渡せる
+    const cls = (dir === 'good' || dir === 'warn' || dir === 'bad') ? dir : (dir === 'up' ? 'up' : 'down');
     container.innerHTML = `
       <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
         <circle class="ring-bg" cx="${size/2}" cy="${size/2}" r="${radius}" stroke-width="${stroke}"></circle>
@@ -691,44 +829,128 @@
   ring(document.getElementById('ringUpSmall'), 57, 'up', 56, 6, '', '強気平均');
 
   const impacts = [
-    {t:"CLARITY Act(米国市場構造法案)の可決可否", s:85, d:"down", status:"cryptotimes.io・news.bitcoin.com・crypto.news・theblock.coは8/15、ホワイトハウスが8/19にCoinbase・Ripple等業界幹部を招集する会合を、CFTCが翌8/20に初のイノベーション諮問委員会(Coinbase・Ripple CEO等が委員)を開催予定と報道(cryptotimes.io、news.bitcoin.com、crypto.news、theblock.co、8/15)。crypto.news・beincrypto.comは同8/15前後、Polymarketの2026年内CLARITY Act成立確率について媒体により14%前後〜19%程度と報じられていると伝えた(crypto.news、beincrypto.com、8/15)。CoinDeskは8/13夜、SECが8/14 10:00 ET(23:00 JST)に予定していた別トラックの『Regulation Crypto』案採決会合を直前に中止し、新たな日程を発表しないまま延期したと報道(coindesk.com、8/13)。Cointelegraph・CryptoTimesも8/14、CLARITY Actの9月先送りに続き2026年の暗号資産規制マイルストーンが相次いで後ろ倒しになっているパターンだと確認(cointelegraph.com、cryptotimes.io、8/14)。CLARITY Act本体は8/14 20:00時点でも8/8のクローチャー提出・9/15採決日程確定から手続き面での新たな進展はない。The Block/CoinDeskは8/8、Thune院内総務がクローチャーを提出し9/15に本会議採決を行う日程を正式確定させたと報道、審議入りの目処は立ったが60票要件・倫理条項対立の解消は依然必要と伝えた(theblock.co、coindesk.com、8/8)。CryptoTimesは8/15、Reg Crypto採決中止に続き別トラックのトークン化免除規則も延期になったと報道、TechTimesは8/14、同じ週にCFTCが独自の暗号資産セッションを準備し規制権限がシフトしつつあると報道した(cryptotimes.io、techtimes.com、8/14-8/15)。8/16 20:00 JST時点でもCLARITY Act本体の手続き面での新たな進展は確認できていない。24/7 Wall Streetは8/16、Galaxy Researchが2026年内のCLARITY Act成立確率をわずか10%と試算していると報道、8/17 03:00 JST時点でも進展はない(247wallst.com、8/16)。24/7 Wall Streetは同8/16、Polymarketベースでも2026年内成立確率が2月ピーク82%から14%まで急落したと伝えており、Galaxy Researchの10%試算と近い水準にある。8/17 09:00 JST時点でも手続き面の新たな進展はない(247wallst.com、8/16)", desc:"cryptotimes.io・news.bitcoin.com・crypto.news・theblock.co・forbes.comは8/15、ホワイトハウスが8/19(水)にCoinbase・a16z・Ripple・Chainlink・Kalshi・Paradigm・Digital Chamber等の暗号資産・予測市場業界幹部を招集する会合を開催予定と報道、SEC委員長Paul Atkins氏の出席は確定、CFTC委員長Michael Selig氏も出席見込みとされる一方トランプ大統領本人の出席は「見込み」にとどまると伝えた。同8/15、crypto.news・tronweekly.com・ambcrypto.comは、CFTCが翌8/20(木)13:00〜16:00 ET・ワシントンで35人体制の初のイノベーション諮問委員会(Selig委員長主宰、Coinbase CEO Brian Armstrong氏・Ripple CEO Brad Garlinghouse氏ら委員)を開催予定と報道、第1セッション「Crypto's Regulatory Evolution: From Uncertainty to Clarity」では分断された州規制と連邦市場構造の欠如を議論すると伝えた(cryptotimes.io、news.bitcoin.com、crypto.news、theblock.co、forbes.com、tronweekly.com、ambcrypto.com、8/15)。crypto.news・beincrypto.comは同8/15前後(XRP価格約$1.009、「XRP Defends $1 by a Cent Since CLARITY Act Slipped. Now CFTC Steps In」と題した記事)、Polymarketの2026年内CLARITY Act成立確率について媒体により14%前後〜19%程度と報じられていると伝えた(crypto.news、beincrypto.com、8/15)。CoinDeskは8/13夜(米東部時間)、SECが8/14 10:00 ET(23:00 JST)に予定していた『Regulation Crypto』案(投資契約向け新規募集規制の枠組み)の採決会合を直前に中止したと報道、公式には「不測の日程調整上の問題」を理由に挙げ、新たな日程は発表されなかった(coindesk.com、8/13)。Cointelegraph・CryptoTimesも8/14、同会合の中止を確認、CLARITY Act(議会立法)とは別トラックのSEC単独ルールメイキングだったが両トラックとも足踏みが続いている状況だと論じた(cointelegraph.com、cryptotimes.io、8/14)。8/14 20:00時点でもCLARITY Act本体は8/8のクローチャー提出・9/15採決日程確定から手続き面での新たな進展の報道は確認できていない。CCNは8/8週、Polymarket予測市場が2026年内のCLARITY Act成立確率を27%前後(2月ピーク80%超から急落)と織り込んでいると報道、別集計では10%台まで低下したとの報道もあり、成立確率を巡る見方はなお流動的(ccn.com)。The Block・CoinDesk・CrowdfundInsiderは8/8、Thune上院多数党院内総務が休会入り直前に本会議への動議に対するクローチャー(討論終結)動議を提出したと報道、これにより9/15(会期再開翌日)に採決を行う日程が正式に確定した。もっともクローチャー提出は法案通過を意味せず、実際のクローチャー可決には60票が必要で、施行主体や倫理条項・違法資金対策条項・上院農業委員会案文の統合を巡る与野党対立は未解決のまま持ち越されたと伝えた(theblock.co、coindesk.com、crowdfundinsider.com、coinpedia.org、8/8)。cryptotimes.ioは8/8、スーン院内総務(共和党)が休会入り後もクローチャー動議を9月に提出する方針を維持していると報道、可決には共和党53票に加え民主党から7票の造反が必要で、ステーブルコイン報酬利回りへの銀行業界の反発と倫理条項を巡るホワイトハウスとの交渉が依然続いていると伝えた(cryptotimes.io、8/8)。coindesk.comは8/6、上院がCLARITY Actの本会議採決を8月の休会入り前に行わないことが確定したと報道。スーン院内総務(共和党)は広報担当者を通じ9月に採決を行う意向を確認したが、可決には民主党から約7票の造反が必要で倫理条項を巡る対立は未解決のまま、上院は9/14に本会議を再開する(coindesk.com、8/6)。crypto.newsは8/7、上院指導部が休会入り前に採決へ向けた手続き(クローチャー)を一切開始しなかったことを受け、予測市場の織り込みが2026年内成立から2027年へシフトしたと報道、Kalshiの『2027年7月1日までの発効』契約は8pt低下の41%、『2027年10月1日までの承認』契約は前週から横ばいの58%で推移していると伝えた(crypto.news、8/7)。cryptotimes.ioは8/7、スーン院内総務がクローチャー動議を一度も提出しないまま上院がCLARITY Actの本会議採決を行わずに休会入りしたと報道。ホワイトハウス高官は8/5(水)まで民主党と倫理条項の調整を続けたが間に合わず、次の審議機会は9/14の会期再開まで持ち越された。Kalshiの「休会前投票」契約は8/7時点で4.7%(37.6pt急落、出来高$861,615)、法案が2027年7月1日までに発効する確率も8pt低下の41%となった(cryptotimes.io、Kalshi、8/7)。cryptotimes.ioは同8/7、Polymarketの「休会前上院採決」契約も16%(直近37pt低下、出来高約$29,000、8/8決済予定)まで低下したと報じた(cryptotimes.io、8/7)。Benzingaは8/6、スーン院内総務が休会入り前の初期採決になお期待を示す一方、Polymarketの2026年成立確率は2月ピーク82%から過去最低の14%まで急落したと報道、Punchbowl Newsの報道として民主党はクローチャーに必要な60票確保に応じない構えで、トランプ大統領の$14億のミームコイン等収益とその既存保有資産を対象外とする倫理条項案が対立の核心だと伝えた。Lummis上院議員は「金曜には帰らないと思う、週末に入ってでも採決を得る」とMaria Bartiromo氏に語ったが、結局採決には至らなかった(Benzinga、8/6)。coingape.comは8/6、木曜(8/6)も上院がCLARITY Actの本会議行動を一切試みず継続予算決議・大学スポーツ保護法・司法長官候補人事などの採決を優先したと報道、休会入りまでの残り実働日はわずか4日となり週末の手続き投票の可能性は事実上消滅したと伝えた(coingape.com、8/6)。cryptotimes.ioは8/6、上院共和・民主両党のスタッフが過去24時間で複数回協議を重ねたものの倫理条項を巡る対立は依然解消していないと報道。Lummis上院議員は8/6、ほぼ1年に及ぶ交渉を経てもなお休会入り(8/10)前にCLARITY Actを取り上げると見込んでいると発言、Hagerty上院議員も本会議採決の実現を改めて要求した。Polymarketでは2026年内の同法成立確率が8/6時点で23%まで低下、「休会入り前の上院採決」に限定したマーケットの確率はわずか6%にとどまる(cryptotimes.io、Polymarket、8/6)。CoinGapeは8/5、上院多数党院内総務ジョン・スーン氏が水曜(8/5)中のクローチャー動議提出を見送ったと報道、継続予算決議の審議優先と60票確保の目処が立たないことが理由とみられると分析した(coingape.com、8/5)。cryptotimes.ioは8/5、Lummis上院議員が8/10の休会入り前の本会議行動を改めて求め、Thune院内総務は本会議時間を確保済みとされるものの着手時期は依然不透明だと報道、Tillis・Gallego両議員が倫理条項の改訂案をホワイトハウスへ提出したと伝えた。同じく8/5、Hagerty上院議員は水面下協議を続けるより公開の本会議採決で各議員の賛否を明確にすべきだと主張、中間選挙政治が民主党側の消極姿勢の一因になっているとの見方を示した(cryptotimes.io)。8/5は通常のクローチャー動議提出期限にあたり、提出されれば8/7に手続き投票(可決そのものではない)の可能性があるが、提出がなければ8月の審議機会は事実上失われ9月の会期再開まで持ち越される公算が大きい。Yahoo Financeは8/4、Polymarketの2026年可決確率が倫理条項対立の長期化やホワイトハウスが持ちかけた7/4署名式構想の頓挫など度重なる期限徒過を受け28%まで急落したと報道、2月時点の82%超からの大幅な低下だと指摘した。coinspectator.comは8/3、Coinbaseが示唆する週内(水木)のCLARITY Act手続き投票が実現するには、60票のクローチャー要件に伴う2日間の待機期間の関係で8/4(火)中にスーン院内総務が動議を提出できるかが真の分岐点になると分析、上院の休会前最終日は8/7(金)で木曜からは多くの議員が地元に戻る見込みだと指摘した。8/1にはホワイトハウスへ超党派の倫理条項対案が到達したと伝わり、トランプ大統領の回答が今週中に法案が動くか9月に持ち越されるかを左右する状況(coinspectator.com、8/3)。Warren上院議員(銀行委員会筆頭理事)は8/1公開の動画で改めて最新法案を「侮辱的(insulting)」と批判、「この最新の法案はカルテルやテロリストを含む犯罪者の資金移動を助長しかねず、投資家と金融システムの保護に失敗している」と述べ対立の根深さを印象付けた(bitcoinmagazine.com、SenWarren、8/1)。8/3、Coinbaseの最高政策責任者Faryar Shirzad氏はNewsNation出演時、CLARITY Actが超党派協議を経て必要な支持を得つつあり、早ければ週内(水〜木)にも上院本会議で手続き投票(procedural vote、可決そのものではない)にかけられ得ると発言、XRP強気派の期待を高めた(coinpaper.com、8/3)。もっとも24/7 Wall Streetは8/2、上院は8/7の休会入りまで残り5営業日しかなく、CLARITY Actは6/1以降いつでも本会議採決が可能な状態にありながらスーン院内総務が採決日程を一度も確定させておらず、ロシア制裁法案・政府高官人事の優先を理由に本格的な採決は9/14の会期再開(中間選挙前最後の現実的な審議機会)以降に持ち越される公算が大きいと分析、Polymarketの2026年可決確率は約30%にとどまると報じた(247wallst.com、8/2)。共和党53議席に対し賛成60票確保には民主党から追加7〜9票が必要ながら、Hawley・Paul両共和党議員が反対に回る可能性もあり確保できているのは2票前後とみられる。7/29、Yahoo FinanceとCoinDeskは、上院多数党院内総務ジョン・スーン氏が討論・修正・クローチャー(60票)動議を8/7の休会入りまでに完了させる時間が現実的に不足していると認めたと報じた。ロシア制裁法案審議や大量の政府高官人事承認が優先され、CLARITY Actの本会議採決枠が事実上消滅、審議は9月の中間選挙運動本格化前の会期にずれ込む公算が大きくなった。これを受けPolymarketの2026年可決確率は2月の80%超から25%前後まで急落(一時28%・37%等の中間値も観測)。下院通過済。上院銀行委員会は5/14に15-9で前進。上院共和党は7/22公開の616ページ統合案文で、大統領を含む政府高官の暗号資産発行・利益相反を2029年1月まで禁じる倫理条項をついに明記(Lummis上院議員主導・ホワイトハウス合意)。Lummis上院議員は7/24、取引所破綻時に顧客の暗号資産をChapter7の「顧客財産」として保護する規定(第701条)と詐欺対策・AML強化に約$1.5億を充てる最新条文を公表、全米警察友愛会(組合員38万2,000人超)も改訂版法案への支持を表明した(CryptoSlate、Forbes、7/24)。しかし施行主体を司法省(DOJ)単独とする案についてAlsobrooks上院議員は7/25までに改めて「unserious(不真面目)」と反発、州司法長官への権限付与を求める立場は変わらず。Warren上院議員(銀行委員会筆頭理事)も7/22、最新条文は投資家・金融システム・国家安全保障の保護に不十分と表明。7/28には上院がCLARITY Actの本会議採決を事実上棚上げし、連邦人事案件・ロシア制裁法案の審議を優先する運びとなったと報じられ、ビットコイン・イーサリアム・XRP合計で$6億超のロング清算を誘発(CCN)。共和党53議席に対し民主党の追加7〜9票が必要ながら確保できているのは2票前後とみられ、Polymarketの2026年可決確率は2月の80%超から33%前後まで低下した。もっとも7/29、上院トップのジョン・スーン院内総務は60票のハードルと倫理条項対立が未解決のまま残る中でも、8月休会入り前にCLARITY Actの本会議採決を行う方針を改めて表明、Galaxy Researchは可決確率をさらに慎重な30%まで引き下げた(crypto.news、7/29)。DailyCoinは7/26、上院共和党内の非公式集計として賛成が60票中51票程度にとどまると報道、倫理条項・DeFi開発者へのマネロン規制適用除外・ステーブルコイン報酬収益を巡る対立という3つの争点が採決を遅らせている。8月休会入り後は9月の中間選挙運動本格化前の約3週間が次の現実的な審議機会となる見込み(Phemex、7/28)。討論・修正・クローチャー動議を8/7の休会入りまでに完了させる時間が不足しているとの見方が広がる中、業界団体Solana Policy Instituteは7/28、スーン(共和党)・シューマー(民主党)両院内総務宛てに休会前の採決実施を求める書簡を送付。cryptonews.comは7/29、こうした遅延観測を受けPolymarketの2026年可決確率が35%前後まで低下したと報じている。coinspectator.comは8/3、60票のクローチャー要件に伴う2日間の待機期間の関係で、8/4(火)中にスーン院内総務が動議を提出できるかが週内採決実現の真の分岐点になると分析、ホワイトハウスに届いた超党派の倫理条項対案へのトランプ大統領の回答が焦点。可決確率はJPMorganが37%、Polymarketが27〜31%のレンジで推移と伝えられている(coinpaper.com、coinspectator.com、Yahoo Finance、8/1-8/3)。24/7 Wall Streetは8/2、上院が8/3に再開し休会入り(8/8週)まで実働5営業日しか残っていないと指摘、この間にクローチャー動議が提出されなければ本格採決は9/14の会期再開(中間選挙前最後の現実的な審議機会)まで持ち越される公算が大きいと分析(247wallst.com、8/2)。CoinGapeは、スーン院内総務が60票確保の見込みが薄いままでも休会前に本会議採決を強行し、全議員に賛否を記録させる構えだと報じている(coingape.com)。もっともYahoo Finance/Polymarketの8/4集計では、倫理条項を巡る対立でクローチャーに必要な民主党7票の確保が依然見通せないことから2026年可決確率は27〜30%まで再び低下したと伝えられている(Polymarket、Yahoo Finance、8/4)。News.Bitcoin.comは8/5、民主党上院議員団が(1)倫理条項の執行体制、(2)違法資金対策条項、(3)ステーブルコイン報酬利回りの3争点で共和党側が目に見える譲歩をしない限りクローチャーに結束して反対する方針を固めたと報道、Thune院内総務は8/4夜(火曜)の時点でクローチャー動議を提出せず、継続予算決議など他の手続き事情に加え票数不足も一因とみられると伝えた(news.bitcoin.com、8/5)。tech-insider.orgは8月中旬、上院が8/10の休会入りまでにクローチャー動議を提出できず、Thune院内総務が9/15に手続き投票を再設定したと報道、Polymarketの2026年内成立確率は14%前後まで低下したと伝えた(tech-insider.org、polymarket.com)。"},
-    {t:"マクロ環境(FRB金利・地政学リスク・BTC相場全体)", s:73, d:"down", status:"cryptotimes.io・news.bitcoin.com・crypto.newsは8/15、ホワイトハウスが8/19に業界幹部を招集する会合を、CFTCが翌8/20に初のイノベーション諮問委員会を開催予定と報道(cryptotimes.io、news.bitcoin.com、crypto.news、8/15)。CryptoTimesは8/15、SECのReg Crypto採決中止に続きトークン化免除規則も延期になったと報道、規制イベントを見送った状態で相場は方向感を欠く展開が続く(cryptotimes.io、coindesk.com、8/13-8/15)。Fortuneは8/14、ビットコインが$62,853(24H安値$62,525〜高値$63,573、時価総額約$1.26兆、24H-0.65%)で推移していると報道(fortune.com、8/14)。イーサリアムは$1,882近辺(時価総額約$2,270億)、ソラナは$75.8前後(時価総額約$444億)で推移(8/16 20:00 JST時点、coingecko.com・coinbase.com調べ)", desc:"cryptotimes.io・theblock.co・forbes.comは8/15、ホワイトハウスが8/19にCoinbase・a16z・Ripple・Chainlink・Kalshi・Paradigm・Digital Chamber等の幹部を招集する会合を開催予定、SEC委員長Atkins氏の出席が確定・CFTC委員長Selig氏も出席見込みと報道。CFTCは翌8/20にワシントンで35人体制の初のイノベーション諮問委員会を開催予定で、規制の重心がSECからCFTCへ移りつつある兆しとして市場が注視していると伝えた(cryptotimes.io、news.bitcoin.com、crypto.news、theblock.co、forbes.com、8/15)。Yahoo Financeは8/13、ビットコインが木曜寄り付き$63,410.39($1,878.08のイーサリアムとともに前日比軟調)で始まり、中東情勢の緊張が続く中インフレ鈍化を示す統計を投資家が消化していると報道した(finance.yahoo.com、8/13)。Riotimes Onlineは8/13、米7月CPIが冷ややかな結果となった後もビットコインが$63,402近辺で横ばい推移していると報道、CoinGeckoの集計でもビットコインの時価総額は約$1.28兆・イーサリアムは約$2,306億(価格$1,878近辺)にとどまっていると伝えた(riotimesonline.com、coingecko.com、8/13)。米7月分CPI(消費者物価指数)は8/12 21:30 JST(8:30 ET)に発表され、前年同月比+3.4%・コアCPI+2.5%といずれも市場予想通りとなった。CryptoTimesは8/12、予想通りの結果を受けビットコイン・イーサリアム・XRPともに反応は限定的でレンジ内の値動きにとどまったと報道した(cryptotimes.io、8/12)。もっともCoinDeskは8/12、CPI発表を前にXRP先物の建玉(OI)が1時間で$171.74M(+20.46%)急増し10月以来の高水準に達したと報道、市場の警戒感の高さを示した(coindesk.com、8/12)。CoinDeskは8/11、ビットコインが火曜、$65,000上抜けに4度目失敗し$64,000近辺($63,955)まで軟化、$65,000上での売り持ち高積み上がりを指摘、200日移動平均線に近い$70,000が地合い転換の鍵になるとし、暗号資産センチメント指数は7月中旬以来「恐怖」圏の30近辺で推移していると報道した。イーサリアムは主要銘柄で最も弱く$1,878近辺(24H-2%超)まで軟化したと伝えた(coindesk.com、8/11)。CoinMarketCapは8/11 20:00時点、ビットコインが$65,000近辺での上値の重さを受け$63,893近辺(24H-1.92%)まで軟化、イーサリアムも心理的節目の$2,000を下回る$1,877近辺(24H-2.51%)で推移していると報道した(coinmarketcap.com、8/11)。CNBCは8/7、7月の米非農業部門雇用者数(NFP)が市場予想の+8万人増に反し2.3万人減少したと報道、失業率も前月の水準から4.1%へ上昇、平均時給の前年比伸びは3.2%と2021年5月以来の低水準になったと伝えた。BLS(米労働統計局)の公式統計としても裏付けられており、労働市場の急速な減速を受けCME FedWatch上では9月FOMCでの利上げ観測が大きく後退し、据え置きを織り込む確率が上昇したと報じられている(cnbc.com、bls.gov、8/7)。Sunday Guardian Liveは8/11、ビットコインが$65,000を維持できるか、イーサリアムが$2,000を目指せるかが今日の市場の焦点だと報道(sundayguardianlive.com、8/11)。TradingKeyは8/10、XRPがドル高・米国債利回り上昇と機関資金フローの鈍化を受け約1%下落したと報道、今週(8/10〜8/14)は米CPI・PPI・小売売上高の発表がドル・利回り・米国株の次の方向性を左右すると伝えた(tradingkey.com、8/10)。TradingKeyは8/9、XRPがマクロ環境の変化とドル指数(DXY)上昇を受け一時的に下落したと報道、取引所への流入増加とロング清算が観測され機関投資家のデレバレッジ(レバレッジ解消)を示唆していると伝えた(tradingkey.com、8/9)。CaptainAltcoinは同8/9、ビットコイン米国スポットETFが8/3以降5営業日連続の資金流入(合計約$8.5億)を記録し相場を下支えしていると報道した(captainaltcoin.com、8/9)。Yahoo Financeは8/7、7月雇用統計の発表を受けビットコインが寄り付きの$64,259.68から午前9時2分(ET)時点で$65,143.87へ、イーサリアムも$1,902.20から$1,929.36へ続伸したと報道した(Yahoo Finance、8/7)。coindesk.comは8/6、ビットコインは月初来+2%で$64,600近辺にとどまる一方、S&P500は月間+3.12%・時価総額+約$2.1兆(クリプト市場全体の時価総額にほぼ匹敵)を記録しており、原油安がインフレ懸念を和らげても米国債利回りとドルが下がらなければビットコインは$65,000近辺に張り付いたままになりかねないと分析した(coindesk.com、8/6)。同日coindesk.comは、CryptoQuantの分析としてイーサリアムが主要銘柄で唯一保有者平均取得コスト(約$2,450)を時価(約$1,900近辺)が下回る「含み損」状態にあり、ビットコイン・XRPは時価が取得コストを上回る一方、市場全体としてはまだ底打ちが確認できていない可能性を指摘した(coindesk.com、8/6)。FF金利3.50-3.75%で5会合連続据え置きの公算(FactSet調査、CBS News)。米軍が7/22、イラン革命防衛隊(IRGC)関連目標へB-1爆撃機による攻撃を実施したと報じられ、Brent原油は一時$95まで急伸後$89近辺へ落ち着くも米国債利回りは上昇しインフレ・リスクオフ懸念が強まった。BTCは7/23に付けた直近高値$66,920近辺から7/28朝(ET)にはYahoo Finance調べで$63,327.39(前日比2.5%安で寄り付いた後さらに下落)まで下落、ETHも$1,877.71(前日比3.2%安)まで下げたが、7/30朝(ET)にはBTCが$64,838.92近辺、ETHが$1,923.23近辺まで持ち直した(Yahoo Finance、7/30)。上院がCLARITY Act採決を棚上げしたと伝わった7/28、ビットコイン・イーサリアム・XRP合計で$6億超のロング清算が発生(CCN)。上院トップのスーン院内総務は7/29、8/7の休会入り前の本会議採決完了に時間が不足していると認め、Polymarket可決確率は25%前後まで急落(Yahoo Finance、7/29)。BTC現物ETFフローも一進一退で、2026年の年初来ネット流出額は約$54億規模で推移。BTCは大手ハードウェアウォレットColdcardのエクスプロイトにより約1,367BTCが盗まれたと伝わって以降、暗号資産市場全体のセンチメント悪化を引きずり8/3-8/4時点で$62,865近辺・時価総額約$1.25兆で推移、ETHも$1,869近辺・時価総額約$2,256億で推移(Yahoo Finance)。上院は8/3に再開し休会入り(8/8週)まで実働5営業日、24/7 Wall Streetはこの間にクローチャー動議が提出されなければCLARITY Actの本格採決は9/14以降に持ち越されると分析、可決確率はJPMorgan37%・Polymarket27〜31%(coinpaper.com、247wallst.com、8/2-8/3)。8/6朝(ET)時点ではBTC$64,052.56→$64,486.72、ETH$1,868.36→$1,880.89へ小幅続伸し、暗号資産全体の時価総額は前日比+0.84%の約$2.30兆まで回復、ホルムズ海峡情勢と米雇用統計を投資家が注視する展開(Yahoo Finance、8/5-8/6)。FXStreetは8/17、ビットコインが重要support の$62,300を維持できるかが焦点で$62,300〜$64,000のレンジ内推移になり得ると分析(fxstreet.com、8/17)。"},
-    {t:"テクニカル(短期トレンド・移動平均)", s:58, d:"down", status:"Benzingaは8/13、XRP先物OIが10ヶ月ぶり高水準に達する中ホエールが下落局面でも買い増しと報道(benzinga.com、8/13)。U.Todayは8/13、XRPの技術的構造は依然弱気で日足RSIが約36.8まで低下、7/20/50/200日SMA($1.03/$1.06/$1.08/$1.31)が軒並み上値を塞ぐ弱気配列にあり、$1.06〜$1.08の回復が地合い安定の第一歩になると分析(u.today、8/13)。Cryptonomistは8/14、XRPがEMA20($1.04)・EMA50($1.09)・EMA200($1.35)全てを下回る教科書的な下落トレンド配列にあり、日足RSI14は35.86、Fear&Greed指数は29(Fear)と報道、8/16 20:00 JST時点も同様の弱気構造が継続(en.cryptonomist.ch、8/14)。thecoinrepublic.comは8/16、チャート上の節目として$1.18(抵抗)・$0.85・$0.77(下値候補)を挙げ、XRPレジャーの活動が2ヶ月ぶり高水準に上昇する一方SNS上のネガティブ言及は3ヶ月ぶり高水準に達したと報道、オンチェーン活動とセンチメント・チャートの綱引きが続くと分析した(thecoinrepublic.com、8/16)。Benzingaは8/16、XRPが$0.995近辺まで再下落し日足でdescending triangle(下降三角形)を形成中、明確な下放れで$0.80→$0.60→測定値ベースで約$0.48までの下落リスクがあると分析、8/17 03:00 JST時点でも同様の弱気構造が継続(benzinga.com、8/16)", desc:"Benzingaは8/13、XRP先物の建玉(OI)が8/1以来拡大を続け10ヶ月ぶりの高水準に達したと報道、ホエールが価格下落局面でも買い増しを続けている一方で価格自体は弱含みが続いていると伝えた(benzinga.com、8/13)。u.todayは8/13、XRPの技術的構造が依然弱気であるとし、日足RSIが約36.8まで低下し売られ過ぎ圏に近づきつつも未達で下押しの余地が残ると分析、7日・20日・50日・200日の各SMAがそれぞれ$1.03・$1.06・$1.08・$1.31に位置し軒並み上値を塞ぐ弱気配列にあり、地合い安定には$1.06〜$1.08帯の回復が最初の関門になると報道した(u.today、8/13)。FXStreetは8/12、Binance取引所のXRP準備高が2.61億枚超(約$26.8億相当)まで増加し潜在的な売り圧が高まる中、8月だけで約6.5%下落・7月高値$1.18からの累計下落率は約14%に達したと報道、弱気の技術的地合いが続いていると伝えた(fxstreet.com、8/12)。u.todayは8/12、XRPが$1.05〜$1.07帯のサポート喪失後、本日一時$1.006近辺まで下落し2024年11月以来初めて$1の心理的節目を割り込み、2025年以降で最も重要な支持構造の一つを無効化したと報道、下値には明確な支持が乏しく、売りが加速すれば次の潜在的な需要ゾーンは$0.95、さらに$0.90になり得るとし、XRPレジャーの活動が引き続き高水準にある中での下落である点が注目されると伝えた(u.today、8/12)。もっともXRPはその後$1.01〜$1.02近辺まで持ち直している。米7月分CPIは8/12 21:30 JST(8:30 ET)に発表され、前年同月比+3.4%・コアCPI+2.5%といずれも市場予想通りとなり、CryptoTimesは反応が限定的でレンジ内の値動きにとどまったと報道した(cryptotimes.io、8/12)。CoinDeskは8/12、CPI発表を前にXRP先物の建玉(OI)が1時間で$171.74M(+20.46%)急増したと報道した(coindesk.com、8/12)。Benzingaは8/12、XRPが年初来約45%下落し時価総額が$65Bを割り込む中、2025年7月14日以来の下降抵抗線と上昇支持線が収束するfalling wedge(下降ウェッジ)を形成していると分析、地合い転換には$1.18奪還が最初の関門になると指摘した(benzinga.com、8/12)。cryptotimes.ioは8/11、XRPが広範な暗号資産市場の圧力と機関資金フローの鈍化の中でも心理的節目の$1近辺で推移し続け、8/12発表の米CPIが当面のボラティリティ要因として注視されていると報道した(cryptotimes.io、8/11)。U.Todayは8/11、XRPが$1.00の心理的節目を巡る攻防が続く中、$1.00〜$1.03が重要な支持ゾーン、$1.06〜$1.08が最初の抵抗ゾーンで、これを回復できれば$1.12が視野に入るとし、日足RSIはシグナル平均41.7を下回る約38.3で推移していると報道した(u.today、8/11)。Benzingaは8/10、XRPが日曜(8/9)の週足終値で2024年11月以来毎週守られてきた$1.04のサポートを割り込み、直近約2年で最も低い週足終値を記録したと報道。明確な週足割れが確定すれば次の目標は$0.75になるとし、Polymarketは月末までにXRPが$1を割り込む確率を65%と織り込んでいると伝えた。もっとも直近1週間でホエールが3.8億XRPを積み増しており、$1.06を月足終値で上抜ければ$1.35、次いで$1.64が視野に入るとの見方も併記した(benzinga.com、8/10)。FXStreetは8/10のAmerican Wrapで、XRPが$1.00の直近サポートを死守しているものの下降する主要移動平均線に上値を抑えられ弱い技術的地合いが続いていると報道した(fxstreet.com、8/10)。DailyCoinは8/9、XRPホエールが直近1週間で3.8億XRPを積み増し保有総量が81.3億XRPに達したと報道、月足のTom DeMark Sequentialが買いシグナルを点灯させ、$1.06の抵抗を上抜ければ$1.35、次いで$1.64が視野に入ると分析した(dailycoin.com、8/9)。TradingKeyは8/10、XRPがドル高・米国債利回り上昇と機関資金フローの鈍化、クロスボーダー決済の銀行提携面での即効性欠如を受け約1%下落し$1.02〜$1.03近辺で推移していると報道した(tradingkey.com、8/10)。99bitcoins/Yahoo Financeは8/9、XRPが1月高値$2.41から約43%安の水準で8月をスタートし、8月序盤に付けた底値$1.0480から反発して$1.0818近辺で推移、月初来リターンは+1.93%になっていると報道。13年連続の季節性データとして「8月はレンジ、Q4に急伸」というパターンが繰り返されてきた点も指摘した(99bitcoins.com、tradingview.com、8/9)。TradingKeyは8/9、XRPがマクロ環境の変化とドル指数上昇を受け一時的に下落、取引所への流入増加とロング清算が機関投資家のデレバレッジを示唆していると報道した(tradingkey.com、8/9)。cryptonomist.chは8/8、XRPが日足ボリンジャーバンド下限の$1.01近辺に張り付き、20日EMA($1.07)・50日EMA($1.11)・200日EMA($1.38)がいずれも右肩下がりで上値を塞ぐ弱気配列にあると報道。日足RSIは35.85で弱いが売られ過ぎには至っておらず、MACDはマイナス圏で緩やかな売り圧の継続を示唆、$1.01を終値で割り込めば下放れリスクがあり、$1.06(時間足)・$1.08(日足)の回復が地合い改善の第一歩になると分析した。XRP特化の恐怖・強欲指数は30(Fear)、暗号資産市場全体の時価総額は約$2.29兆で推移していると伝えた(cryptonomist.ch、8/8)。thecryptobasic.comは8/7、XRPが8/6の日足終値で年初来最安値の$1.027を記録したと報道、$1.00の心理的節目を割り込むリスクが再び意識されていると伝えた(thecryptobasic.com、8/7)。テクニカル指標ではRSI(14日)が約29まで低下し売られ過ぎ圏、直近支持は$1.00〜$1.03、抵抗は$1.11→$1.19→$1.30の順、50日移動平均は$1.11・200日移動平均は$1.36といずれも上値の壁になっている(bravenewcoin.com、investing.com、8/7)。CryptoQuantアナリストAmr Taha氏は、Binance建てXRP建玉が8/4の約$1.8億から8/7には約$1.95億へ8%増加したと分析した(cryptonews.net、8/7)。cryptonews.netは8/6、Fear & Greedインデックスが25(Extreme Fear)まで低下し、XRPは日足ピボットかつボリンジャーバンド下限の$1.04近辺という重要な支持水準上で推移していると報道。MACDは-0.005で売りシグナル、RSIは38.920で中立、Williams %Rは-99.123で売られ過ぎ圏を示し、直近支持は$1.04(日足S1・ボリンジャー下限)、抵抗は$1.06(時間足・R1ピボット)→$1.08(日足20日EMA)→$1.09(ボリンジャー中央)の順に控えると分析、規制面の摩擦とアクティブアドレス増加の一服がモメンタム系トレーダーの手仕舞いを誘発していると指摘した(cryptonews.net、8/6)。crypto.newsは8/5-8/6、XRPの建玉(OI)が過去6ヶ月レンジの下限である3.62億〜3.69億ドルまで低下し、推定レバレッジ比率も0.139〜0.142まで縮小したと報道、資金調達率(ファンディング)はマイナス0.009〜プラス0.010のレンジで推移しロング・ショート両方の清算が交互に発生しており強制ロスカットの一方向的な連鎖ではなくポジション整理が進んだ兆候だと分析した(crypto.news)。The Crypto Basicも8/5、レバレッジが新安値まで急落したと報じている(thecryptobasic.com)。TradingKeyは8/6、XRPが前日比-2.45%下落したと報道(tradingkey.com、8/6)。Benzingaは8/4、XRP ETFへの4営業日連続の資金流入(合計約$15.4M)にもかかわらずXRPが2ヶ月超続くディセンディング・トライアングルの頂点で$1.08近辺に張り付いたままだと指摘、$1.05の下値ラインが$1.00までの調整を防ぐ唯一の防衛線になっていると分析した(Benzinga、8/4)。FXStreetは8/5、CryptoQuantアナリストAmr Taha氏の分析としてXRPが2日連続で下落していると報じた。XRPは7/21、symmetric triangleのブレイクアウトを確定させ$1.16の2週間ぶり高値を記録、Parabolic SARは$1.0609で強気転換した(Benzinga)。日足では6/6安値$1.05を起点とするinverse head-and-shoulders(逆三尊)が7/21の反発で右肩を完成させブレイクアウトも確定、上値目標は16%高の$1.32(The Crypto Basic、7/23)。だが7/27夜(20:00 JST)の$1.1121(TradingKey)→7/28朝(09:00 JST)の$1.09→7/28夜(20:00 JST)の$1.05→7/29未明(03:00 JST)の$1.06を経て、7/29 14:00 ET発表のFOMCがFF金利3.50-3.75%を据え置いたことを受け7/30未明(03:00 JST)の$1.08→7/30朝(09:00 JST)の$1.07を経て、ETF資金流入再開も支えに7/30夜(20:00 JST)〜7/31朝(09:00 JST)には$1.10近辺まで続伸するも、7/31夜(20:00 JST)の$1.09近辺から8/1夜(20:00 JST)には$1.06近辺まで再び軟化、8/3朝(09:00 JST)には上院再開・Coinbaseの手続き投票期待で$1.08近辺まで反発した後、8/1のRipple月次エスクロー解放(10億XRP解放・純新規供給約3億XRP)による潜在的な売り圧が意識され8/3夜(20:00 JST)時点は$1.07近辺まで小幅軟化(FX Leaders・CaptainAltcoin、8/3)。cryptonomistは7/31時点でXRPが$1.07で全ての主要日足移動平均(EMA20 $1.09・EMA50 $1.13・EMA200 $1.42)を下回る弱気配列にあると指摘、日足RSIは42.47でオーバーソールドには未達のまま軟調を示唆、ATRは$0.03と値動きの乏しさが続く(cryptonomist、7/31)。FX Leadersは8/3、RSIは46〜47の中立圏で$1.045〜$1.066の支持を防衛中と分析、EMA20・50が位置する$1.13〜$1.14帯が当面の抵抗と指摘。bitcoinfoundation.orgは7/28、$1.04〜$1.00が繰り返し支持を試されてきたゾーンで、日足終値でこれを割り込むと$0.85〜$0.90までの調整リスクが高まると指摘。The Crypto Basicは7/25、日足に下降チャネル(descending channel)が形成されているとし、チャネル下限の$0.9223(2025年7月高値$3.60比75%安)まで調整が深まるシナリオを紹介する一方、$0.80近辺を死守できれば今回の下落局面の底になり得るとの見方も併記した。先物OIのZ-scoreは1.60まで上昇しレバレッジ再燃の兆し(CryptoQuant、7/23)。直近レジスタンス帯は$1.17〜$1.24、これを上抜けられるか、$1.045〜$1.00を死守できるかが当面最大の分岐点。CoinGabbarは8/3、エスクロー解放後もXRP現物ETFが約9.9億枚をロックしAUMは$1B弱を維持する一方、XRPLのステーブルコイン供給は過去7日間で13.06%減少したと報道(coingabbar.com、8/3)。u.todayは8/3、RSIが47近辺の中立圏でブル・ベアどちらの勢いも示していないとし、50日EMA($1.09近辺)の回復が強気転換の第一関門と分析。The Crypto Basicは8/3、アナリストJay Nisbett氏が8月中は$1.02〜$1.30台のレンジを軸としつつ、強気バイアスの下で$1.60〜$2.50までの短期的な急伸シナリオもあり得るが長続きはしないと分析していると報じた。themarketperiodical.comは8/2、XRPが$1.05近辺で下値を固めXRPL v3.3.0アップグレード(RippleXのJazzi Cooper氏が7/31に来週稼働を予告、5つのアメンドメントを含む)のバリデータ投票開始を待つ展開にあると報道、80%以上の承認が2週連続で得られるまで各機能は有効化されない(themarketperiodical.com、cryptopolitan.com)。AltIndexは8/4、XRPが上昇支持トレンドライン($1.0510近辺)の上で推移する一方、下降抵抗トレンドライン($1.1123)と50日EMA($1.1194)に上値を抑えられ収束型のシンメトリカルトライアングルの内部にあると分析、日足RSIは41まで低下し売り圧がやや優勢だが売られ過ぎには至っていないとした(altindex.com、8/4)。FXStreetは8/17、XRPが$1近辺でモメンタムを失いつつあり$0.95〜$1.05のレンジ推移になり得ると分析(fxstreet.com、8/17)。"},
-    {t:"ホエールの蓄積・取引所からの引き出し", s:83, d:"up", status:"cryptotimes.ioは8/15、XRPのSNSセンチメントが過去3ヶ月で最も弱気な水準に達した一方、XRPレジャーの日次アクティブアドレスは24時間で49,929件と2ヶ月超ぶりの高水準に達したと報道、弱気心理とオンチェーン活動上昇の乖離が逆張りシグナルとして注目されていると伝えた(cryptotimes.io、8/15)。thecryptobasicは8/13、Santimentデータとして日次アクティブアドレスが8月平均35,700(7月26,400から約35%増、8/11は6/5以来の高水準)に達した一方、新規アドレス作成数はほぼ横ばいで既存保有者の活動活発化が主因と報道(thecryptobasic.com、8/13)。Benzingaは8/13、XRP先物OIが8/1以来拡大を続け10ヶ月ぶりの高水準に達する中、ホエールが価格下落局面でも買い増しを継続していると報道(benzinga.com、8/13)。24/7 Wall Streetは8/12、大口ホエールが8/9までの1週間で3.8億XRP超(時価約$3.9億相当)を積み増し、100万XRP以上保有ウォレット数が過去3ヶ月で32件増え約2,033件に達した一方、時価総額は同期間に29%減少、先物OIは2.74億枚まで積み上がり10ヶ月ぶり高水準になったと報道(247wallst.com、8/12)。CoinGapeは8/12、アクティブアドレス数が8/1〜8/11で84%急増と報道(coingape.com、8/12)", desc:"Benzingaは8/13、XRP先物の建玉(OI)が8/1以来拡大を続け10ヶ月ぶりの高水準に達したと報道、ホエールが価格下落局面でも買い増しを続けている一方、価格自体は上値の重い展開が続いていると伝えた(benzinga.com、8/13)。24/7 Wall Streetは8/12、大口ホエールが8/9までの1週間で3.8億XRP超(時価約$3.9億相当)を積み増したと報道、100万XRP以上を保有するウォレット数は過去3ヶ月で32件増加し約2,033件に達した一方、その間にXRPの時価総額は29%減少したと伝えた。CryptoQuantの90日ベースのテイカー累積出来高デルタは中立圏まで戻っており、大口が成行で買い上げるのではなく指値で待つ姿勢に転じていることを示唆、上昇再開には月足終値で$1.06を上抜く必要があり、次の供給の壁は$1.35・$1.64になるとの見方を伝えた。もっとも無期限先物の建玉(OI)は価格が下落する中でも2.74億XRPまで積み上がり10ヶ月ぶりの高水準に達しており、これは保有者の投げ売りというより新規ショートの積み上がりを示唆すると分析した(247wallst.com、benzinga.com、8/12)。CoinGapeは8/12、Santimentのデータとしてアクティブアドレス数が8/1の23,642から8/11には43,543へ84%急増し、100万XRP超保有ウォレットも5月以降の3ヶ月で32件増加したと報道、RLUSDの普及拡大とXRPレジャーのトークナイゼーション・決済領域への拡張を背景にホエールが強気に転じつつある一方、小口投資家の売りが続き、ホエール買い増しが始まった3ヶ月間で時価総額は29%減少したと伝えた(coingape.com、8/12)。Benzingaは8/10、XRPが週足終値ベースで2024年11月以来最も低い水準まで軟化する中でも、直近1週間のホエールによる3.8億XRP積み増しは現在の価格水準に対する確信の表れだと分析、$1.06を月足終値で上抜ければ$1.35、次いで$1.64が視野に入るとの見方を伝えた(benzinga.com、8/10)。DailyCoinは8/9、Ali Chartsのデータとして大口ホエールが過去1週間で3.8億XRP超を積み増し保有総量を81.3億XRPまで拡大したと報道、現在の水準での確信の表れと分析、月足のTom DeMark Sequentialインジケーターが弱気から強気へのモメンタム転換を示唆する買いシグナルを点灯させたと伝えた(過去には2020年4月に1,074%の急騰局面でも同様のシグナルが出現)。$1.06の抵抗を上抜ければ$1.35、次いで$1.64が視野に入るとした(dailycoin.com、8/9)。U.Todayは8/10、Rippleが月曜(8/10)にXRPL上で$10M相当のRLUSDをミントしたと報道、時期的に重なったホエールの3.8億XRP積み増しとの直接の因果関係は確認されていないと伝えた(u.today、8/10)。The Blockは8/5、CryptoQuantの分析としてビットコイン・イーサリアム・XRPの大口保有者(ホエール)がいずれも価格が実現価格近辺またはそれを下回る水準で積み増しを続けており、これはサイクル終盤の「後期弱気相場」の特徴と一致すると報道。100万〜1億XRP保有帯の残高は流通供給の11.79%まで上昇(前日の11.65%から拡大)、10万〜100万XRP保有帯は2月時点の108.7億XRPから117.9億XRPまで積み増したと伝えた。CryptoQuant調査部門責任者のJulio Moreno氏は、この積み増しが下値圧力を緩和しサイクル終盤のパターンと一致するとしつつも、市場全体としては底打ちがまだ確認されておらずさらなる下落の余地も残ると指摘した(theblock.co、8/5)。thecryptobasic.comは8/7、10万〜100万XRP保有帯のホエールが2026年通年で約12.3億XRPを積み増したと報道、価格が年初来約43%下落する局面でも一貫した買い増しが続いていると分析した(thecryptobasic.com、8/7)。coindesk.comは8/6、CryptoQuantの分析としてXRPホエールが1月の$2.40近辺から現在の$1.00〜$1.20レンジまでの下落局面を通じ一貫して買い増しを続けており、これは資本逃避や急反発の予兆ではなく静かな吸収(quiet absorption)のパターンだと報道。XRP現物市場の平均取引サイズは大口ホエール相当のレンジ内にとどまり、90日ベースのテイカー累積出来高デルタ(CVD)が中立圏にあることから、積極的な成行買いというより受動的な出来高吸収が進んでいると分析、XRPの実現価格(約$0.75)に対し時価(約$1.10前後)は上回っており、価格調整局面でのホエール残高増加は過去に市場の底形成と関連してきたシグナルだとCryptoQuantは指摘した(coindesk.com、8/6)。CryptoQuantアナリストAmr Taha氏は8/5、Binanceでは100万XRP超の大口出金が引き出し全体の55%超を占める一方、Coinbaseでは10万〜100万XRP規模の「シャーク」層が出金の55.8%を占めると分析、取引所ごとの資金移動パターンの違いを指摘した(FXStreet、8/5)。FXStreetは8/5、CryptoQuantアナリストAmr Taha氏の分析としてBinance・Coinbase間でXRP大口の出金構成が異なると報道。Binanceでは100万XRP超の送金が引き出し全体の55%超を占めた一方、Coinbaseでは10万〜100万XRP規模の「シャーク」層による出金が6/1時点の約35%から8/3には55.8%まで拡大、両取引所で異なる資金移動パターンが観測されている(FXStreet、8/5)。The Crypto Basicは8/4、Binance・Coinbase間でXRPホエールの出金動向に40%の乖離が生じていると報道、8/3にBinanceの取引所供給比率が0.03まで低下、100万XRP超の送金が同日出金額の55.3%を占めたと伝えた(thecryptobasic.com、8/4)。Binance向けXRPホエール入金はピークの約5.83億XRP(約$13.6億相当)から約2,530万XRP(約$23M相当)まで減少し2025年1月以来の低水準、90日平均も$4.6億から$6,900万まで縮小した(Benzinga)。Binance取引所のXRP準備高は約26.1億XRPまで縮小し2026年2月以来の低水準(CoinCentral、crypto.news)。もっとも30日ベースのホエール流入額は約9.47億XRPまで低下し2ヶ月ぶりの低水準となっており、大口の慎重姿勢がにじむ一方、Binanceからの大口出金額も30日ベースで約8.85億XRPと2ヶ月ぶりの低水準に減少しており、ホエールの取引所離れは入出金両面で一服しつつある(BigGo Finance、7月下旬)。CryptoQuantアナリストのPelinayPA氏は7/30、10万〜100万XRP・100万XRP超の大口取引がいずれも減少しており、積み増しにも売却にも動いていない『様子見(waiting phase)』にあると指摘、過去のXRP強気相場はホエール主導だっただけに流動性の低下は方向感の乏しさにつながるとの見方を示した(thecryptobasic.com、7/30)。10万〜1億XRP保有ウォレットは過去5週間で残高を+2.8%積み増す一方、0.01XRP未満の超小口ウォレットは-5.2%減少しており大口と小口の温度差が鮮明(BeInCrypto、7/28)。取引所からの純流出に占めるホエールの比率も7/22に過去最高77.8%に到達し、小口投資家はわずか22%と過去最低水準(The Crypto Basic、7/22)。もっとも現物買いが強さを見せる一方、Binance無期先物のCVDは低水準でレバレッジ筋の弱気ポジションが積み上がる乖離も観測されている(The Crypto Basic)。10万〜1億XRP保有ウォレット(ホエール層)は7/11-15の1週間だけで約7,000万XRPを積み増し合計保有量は約38.3億XRPに拡大した(CoinPaper、crypto.news)。crypto.newsは同期間について、1M〜1000万XRP保有ウォレットの合計残高も約3.71億XRPから約3.83億XRPへ増加したと報じ、XRP先物OIは約$2.5B超と2026年の高水準に達したと伝えている。The Crypto Basicは8/4、BinanceとCoinbaseでXRPホエールの出金動向に40%の乖離が生じていると報道、8/3にはBinanceの取引所供給比率が0.03まで低下し100万XRP超の大口送金が同日出金額の55.3%を占めるなど、大口の取引所離れが加速する兆候を指摘した(thecryptobasic.com、8/4)。weex.comは8月中旬、ホエールが1日あたり1,000万XRP超を積み増しBinanceからの大口流出が取引所流出全体の91%を占め2024年以来の高水準になったと分析(weex.com)。"},
-    {t:"現物XRP ETFへの資金流入", s:28, d:"down", status:"Coinpediaが8/8に報じた週間流入93%減($1.01M)・AUM$964Mが直近の週次集計。Benzingaは8/16、8月の月間流入がこれまでのところ$3.27Mにとどまり7月の$27Mから急減速していると報道(coinpedia.org、8/8、benzinga.com、8/16)。24/7 Wall Streetは8/16、XRP現物ETFへの買いがローンチ以来96%減少していると報道、Standard Charteredが示す最大$8Bの強気な流入予測に届くかは不透明だと指摘した。8/17 09:00 JST時点でもこれを更新する新たな週次集計は確認できていない(247wallst.com、8/16)", desc:"8/16 20:00時点でCoinpediaが8/8に報じた週間流入93%減($1.01M)・AUM$964Mを更新する新たな週次集計は確認できていない。thecryptobasic.comは8/7、XRP現物ETFが8/6にBitwise($289万)・Franklin TempletonのXRPZ($56.2万)の資金流入により合計$345万のネット流入となったと報道、8/5に記録した約1ヶ月ぶりの純流出($358万)から一夜で反転したと伝えた。累計流入は約$1.51B・AUM約$1.0B・XRP約9.924億枚をロック(thecryptobasic.com、8/7)。CoinGabbarは8/6、XRP現物ETFが8/5にBitwiseファンド単独主導で$358万のネット流出を記録したと報道、価格は24H -1.65%・7D -3.24%程度まで軟化し時価総額は約$657億にとどまったと伝えた(coingabbar.com、8/6)。Benzingaは8/4、XRP現物ETFが8/3までの4営業日連続で資金流入(合計約$15.4M)を記録した後、8/4はネット流入ゼロにとどまったと報道、価格が$1.05近辺まで軟化する中でも機関マネーの流入ペースは一服している(Benzinga、8/4)。Benzingaは8/4、XRP現物ETFが4営業日連続の資金流入を記録したと報道、Canary CapitalのXRPC(NASDAQ:XRPC)が8/3の唯一の流入元となりBitwise・Franklinは同日資金の動きがなかったとしつつ、機関投資家が価格の確認を待たずに弱含みの局面で買いを入れていると分析した(Benzinga、8/4)。7銘柄が稼働。直近週は+$8.15Mの純流入でネット資産(AUM)は約$999.25Mまで回復、XRP約9.79億枚をロック(価格変動に伴い微調整、coingabbar.com)。ローンチ以来の累計流入はThe Crypto Basicが7/30に伝えた最新集計で過去最高の$1.50Bに到達、発行体別ではBitwiseが$500M(構成比33%)で首位、Canary Capitalが$466.97M(31%)で2位、Franklin TempletonのXRPZが$422.45M(3位)、GrayscaleのGXRPが$131.46M(4位)。もっとも7月の月間純流入は最終的に$27.29Mにとどまり、6月の$59.46Mから鈍化(4ヶ月連続プラスは維持、247wallst.com/Yahoo Finance、8/1)。XRPは年初来下落しているにもかかわらずETFはほぼ毎月プラスの純流入を維持しており、短期の価格actionとは切り離された機関マネーの継続的な資金定着を示唆(thecryptobasic.com、7/30)。24/7 Wall Streetは8/1、JPMorganが2025年に予測した初年度最大$8Bの流入規模に対し実績が$1.5B前後(AUM$988.78M)にとどまっている背景として、XRP価格がETF上場時の半値近辺まで下落し保有資産の評価額が目減りしている点を指摘、CLARITY Act成立こそが流入拡大の鍵と分析(247wallst.com)。Benzingaは8/2、来週予定のXRPL v3.3.0アップグレード(confidential MPT導入)を前に直近週+$14.8Mの流入があったと報じた(Benzinga)。CoinGabbarは8/3、8/1のRipple月次エスクロー解放(10億XRP解放・純新規供給約3億XRP)後もXRP現物ETF全体が約9.9億枚のXRPをロックし続けAUMは$1B弱を維持していると報道、ETF需要がエスクロー由来の潜在供給圧力を一部相殺している構図が続く(coingabbar.com、8/3)。Benzingaは8/3、来週稼働予定のXRPL v3.3.0アップグレードを控えETFへの資金流入が加速していると報じており、上院のCLARITY Act審議動向と並んで今後数週間の資金フローを左右する材料として意識される(benzinga.com、8/3)。coinmarketcap.comは8/17、現物XRP ETF7銘柄の合計AUMが約$994Mに達したと報道、cryptonews.comは8/14、Wells FargoがBitwise XRP ETFに約$9.18M相当のポジションを開示し今四半期最大の機関投資家になったと報道した(coinmarketcap.com、8/17、cryptonews.com、8/14)。"},
-    {t:"RLUSD / Open USD ステーブルコイン拡大", s:48, d:"down", status:"Benzingaは8/16、RLUSDの時価総額が年初来高値$1.81Bから$1.71Bへ縮小、XRPLのTVLも高値$115Mから$29Mへ落ち込み、チェーン手数料も2024年Q4ピークの$1.4Mから2026年Q1時点で$48,120まで減少したと報道、実需の勢いに陰りが見えると分析(benzinga.com、8/16)。CoinDeskは8/4、FlareのラップドXRP(FXRP)がSentora運用の$280M規模RLUSD貸出プールの担保として承認され、Morpho Blue上でXRP保有者がRLUSDを借り入れ可能になったと報道、XRP関連資産で初の機関級DeFi担保と伝えた(coindesk.com、8/4)。8/17 09:00 JST時点でも実質的な変化はない", desc:"CoinDeskは8/4、FlareのラップドXRP「FXRP」がSentoraが運用する$280M規模のRLUSD貸出プールの担保として承認され、Morpho Blue上の新規アイソレート市場を通じXRP保有者がイーサリアム上でRLUSDを借り入れ可能になったと報道。市場の挙動・オラクル設計・流動性・清算能力を機関投資家向けリスクフレームワークで審査した上での承認で、XRP関連資産が機関級のDeFi担保として承認された初のケースとした。もっともこれまでのFXRPミント額は約1.55億枚にとどまり、Flareが掲げる6ヶ月で50億XRPを取り込む目標にはなお遠いと伝えた(coindesk.com、8/4)。U.Todayは8/10、Rippleが月曜(8/10)にXRPL上で$10M相当のRLUSDを新規ミントしたと報道、DailyCoinが同8/9に報じたXRPホエールの直近1週間で3.8億XRP積み増しと時期が重なったものの、両者を結びつける直接的な証拠はないと分析した(u.today、8/10)。blockonomi.comは8/6、Rippleが3署名者体制のトランザクションで811,026 RLUSDを新規ミント(手数料0.000405 XRP、XRPScan台帳#106,109,031で確認)、これによりXRPL上のステーブルコイン供給に占めるRLUSDの比率が50%を突破したと報道、ローンチ以来の累計取引高は$2.5Bを超えたと伝えた。Rippleは新規ミントの具体的な理由を公表していないが、取引所流動性や機関決済・トレジャリー需要への対応が通例の背景だと分析した(blockonomi.com、8/6)。時価総額は約$1.5B(6/17ピークの約$1.64Bから調整)。Rippleは7/24、機関投資家向けにRLUSDの発行・償還・ブリッジ・追跡を自動化する基盤「Ripple Mint」を発表し、対応チェーンをXRPL EVMサイドチェーン・Base・Optimism・Ink・Unichainへ拡大。Rippleは7/28、2,300超の機関・100以上の法域をつなぎ年間約$2兆相当の取引量を処理するB2Bステーブルコイン決済基盤「Notabene Flow」にRLUSDを統合すべくNotabeneへ戦略的出資を実施したと発表(fintech.global、CryptoPotato)。もっとも月間送金取引量は$146億から$109.5億(約$108.9億、CryptoPotato試算)へ約25〜26%減少した一方、保有者数は+6%、アクティブアドレス数は+70%増加しており、『使われる』段階から『保有される』段階への移行を示唆(CoinDesk、7/24)。Rippleは7/14に1,000万RLUSDを追加バーンし7/6以降の累計バーン額は8,000万RLUSDに、直近には$225M相当の新規ミントもあり供給は伸縮を続ける。XRPL建てRLUSDは6/26にイーサリアム上の供給を上回って以降首位を維持しており、直近では約$810M(構成比51.7%)対イーサリアムの約$756M(48.3%、1ヶ月前は逆にイーサリアムが$300M超上回っていた)まで差を広げている。BinanceはRLUSD保有者の裾野拡大策として、7/17〜8/14の期間中毎週XRPを分配する総額$80万相当のエアドロップキャンペーンを実施しており、Binance Earn・Margin・Futuresの対象ユーザーに配布される(MEXC News調べ)。CoinGabbarは8/3、DeFiLlamaのデータとしてXRPL上のステーブルコイン供給全体が過去7日間で13.06%減少し$987.76Mから$853.38Mへ縮小したと報道、RLUSDが最大構成要素であるだけに実需の勢いにやや陰りが見える可能性がある一方、単月の変動である点には留意が必要(coingabbar.com、8/3)。"},
-    {t:"銀行がXRPでなくRLUSD/法定通貨で決済する傾向", s:55, d:"down", status:"構造的懸念・継続", desc:"大手銀がRippleNet経由でもRLUSD・フィアットを選好との分析。「XRP=ブリッジ資産」テーゼ最大のリスク。ただしRLUSD自体の流通量も5月ピークから約20%減と調整局面に入っており、代替リスクの短期的な進行速度はやや不透明。"},
-    {t:"x402 Foundation参加 & Ripple Prime機関基盤拡大", s:52, d:"up", status:"AIエージェント決済が140万件超に拡大、Ripple Prime収益は買収後3倍(Benzinga、7/21)", desc:"RippleがVisa・Mastercard等と並ぶプレミアムメンバーとして参画したAIエージェント決済規格「x402」は、XRPL AI Starter Kit公開から4週間で140万件超のエージェント決済(1件$0.0002)を記録。7/20にはJPMorgan・Mastercard・Ondo Financeとの提携で、Ondoの短期米国債ファンド(OUSG)をXRPレジャー上でトークン化しほぼリアルタイムのクロスボーダー償還を行うパイロットを完了(JPMorganのKinexysが法定通貨側を処理、CryptoSlate)。機関向けブローカレッジ子会社Ripple Prime(旧Hidden Road)は買収後に収益が3倍に伸び年間清算高は$3兆を突破、機関顧客300超の規模に。国際CEOのMichael Higgins氏は担保・流動性・決済がブロックチェーン網へ移行する「ウォール街2.0」の基盤構築を進めていると発言、Neuberger Specialty Financeから$2億の与信枠も確保(Benzinga、7/21)。新設の「XRP担保証書」により機関投資家はXRPを売却せずCME先物などの米ドル建て信用枠を確保できるようになり、XRPが決済資産から機関担保資産へと用途を広げつつある。Rippleは7/22、CNBC/Statista「世界のフィンテック企業トップ」に4年連続で選出された。英大手資産運用会社Aviva Investorsは7/29、RippleおよびKomainu(カストディ)・Licuido(トークナイゼーション基盤)と組みUSD Liquidity FundのトークナイズドシェアクラスをXRPレジャー上で稼働、資産はBNY Mellonが保管し、アイルランド中央銀行が承認した初のトークン化ファンド構造として他の資産運用会社への先例となった(crypto.news、cryptonews.net、7/29)。"},
-    {t:"XRPL-Axelar連携によるクロスチェーンDeFi拡大", s:38, d:"up", status:"7/20統合完了・EVM/Cosmos含む80超のチェーンに接続", desc:"XRPレジャーおよびXRPL EVMサイドチェーンが7/20、Axelarのインターチェーン・トークン・サービスと連携を開始。XRPおよびXRPLネイティブ資産がAxelarの相互運用スタックを通じてEVM・Cosmos等80超のブロックチェーン上のDeFiアプリケーションと接続可能になり、ステーブルコインや大口資産向けの流動性拡大にも寄与すると期待される(Bitcoinist、Axelar Network、7/20-21)。"},
-    {t:"DTCC担保フレームワークにおけるXRPのヘアカット表示", s:35, d:"down", status:"複数メディアが追随報道も真偽不明(7/18時点)", desc:"DTCCラーニングセンターの検索結果に、XRPが$5以下ではほぼ全額ヘアカット・$5超で35%ヘアカットまたはVaR方式になるとの表示が出たと拡散。Times Tabloid以外にdmarketforces・coin-turk等も同様の報道を伝えているが、XRPLの研究者からはAI生成の検索結果であり公式な規則文書ではないとの指摘もあり、真偽・法的位置付けは依然未確定。"},
-    {t:"RWAトークン化の拡大(Evernorth等)", s:52, d:"up", status:"XRPレジャーが直近6ヶ月でRWA新規流入$26億を記録しBNB Chainに次ぐ2位に(The Crypto Basic、7/25)", desc:"RWA.xyzのデータによると、XRPレジャーは直近6ヶ月間でステーブルコインを除くRWA(現実資産トークン化)の新規流入額$26億を記録し、BNB Chainの$30億に次ぐ2位に浮上、3位のStellarの$21億を上回った(The Crypto Basic、crypto.news、7/25)。XRPL上のRWA総額は$40億超に拡大、トークン化エネルギー資産(JMWHが$22.3億)が最大のカテゴリーとなっている。The Crypto Basicは7/24にも、XRP関連インフラ上のRWAが2026年累計で$8億相当に到達、資産担保クレジットも約$10億相当と前年通期を上回るペースと報じており、決済レールとしての実需拡大が続く。XRP treasury企業Evernorthは、Armada Acquisition Corp IIとのSPAC合併によるNasdaq上場(ティッカーXRPN)・$10億規模のXRPトレジャリー戦略を進めており、SBIホールディングス($2億コミット)を筆頭にRipple・Pantera Capital・Krakenが出資、日本語版X公式アカウントも開設し日本市場を重点開拓中(Coinspeaker)。ただしSEC登録届出は依然未発効でNasdaq上場時期は未確定(7/28時点)。"},
-    {t:"Rippleの信託銀行免許(OCC認可)", s:50, d:"up", status:"確定済 2025/12", desc:"RLUSD準備金のカストディが可能に。機関投資家のコンプライアンス障壁が低下。"},
-    {t:"欧州MiCAライセンス / ISO 20022・SWIFT連携", s:44, d:"up", status:"24/7 Wall Streetは8/16、Rippleがドイツ銀行・JPモルガン・マスターカードとの提携でクロスボーダー決済網を拡大し、EUでMiCA CASPライセンス・EMI(電子マネー機関)ライセンスを完全取得したと改めて報道、それでもXRP価格への直接的な反応は限定的と伝えた(247wallst.com、8/16)。Benzingaは8/11、ルクセンブルクCSSFのフルMiCA CASPライセンス取得(EEA30カ国展開可能・グローバル規制ライセンス75件超)を報道も、XRPはほぼ無反応と伝えた(benzinga.com、8/11)", desc:"Benzingaは8/11、RippleがルクセンブルクCSSFから完全なMiCA CASPライセンスを取得しEEA30カ国でのパスポート展開が可能になった一方、XRPはこの規制面の好材料にほぼ無反応(小幅安)にとどまったと報道、MiCA認可はサービス提供会社への認可でありXRPトークン自体への当局承認ではなく、決済取扱高の実際の増加という次の証拠を市場が待っていると分析した(benzinga.com、8/11)。ルクセンブルクCSSFがRippleに完全なMiCA CASPライセンスを付与し、EEA30カ国でパスポート展開が可能に(発表直後の値動きは限定的、過去の予備承認時は逆に3%下落した例も)。SWIFTは2025/11に移行完了、Ripple Payments製品はSWIFTメッセージング相互運用性のサポートも明記(技術仕様上の対応で正式な商業提携ではない点に注意)。"},
-    {t:"XRP Tokyo 2026 / アジア圏機関連携", s:45, d:"up", status:"進行中", desc:"SBIが日本でRLUSD展開、大阪デジタル取引所で債券発行。年間$33兆規模の決済高予測を提示。"},
-    {t:"SEC訴訟の完全決着", s:40, d:"up", status:"確定済 2026 Q1", desc:"控訴取り下げ、罰金$50M程度に圧縮。好材料だがすでに相当程度織り込み済み。"},
-    {t:"Garlinghouse発言トーン", s:25, d:"down", status:"進行中", desc:"「自分はXRPマキシではない」発言で軽微な反応。6月は「実需こそ長期的価値」と軌道修正。"},
+    {date:"2026-08-15", tier:"bad", t:"CLARITY Act(米国市場構造法案)の可決可否", s:85, d:"down", status:"cryptotimes.io・news.bitcoin.com・crypto.news・theblock.coは8/15、ホワイトハウスが8/19にCoinbase・Ripple等業界幹部を招集する会合を、CFTCが翌8/20に初のイノベーション諮問委員会(Coinbase・Ripple CEO等が委員)を開催予定と報道(cryptotimes.io、news.bitcoin.com、crypto.news、theblock.co、8/15)。crypto.news・beincrypto.comは同8/15前後、Polymarketの2026年内CLARITY Act成立確率について媒体により14%前後〜19%程度と報じられていると伝えた(crypto.news、beincrypto.com、8/15)。CoinDeskは8/13夜、SECが8/14 10:00 ET(23:00 JST)に予定していた別トラックの『Regulation Crypto』案採決会合を直前に中止し、新たな日程を発表しないまま延期したと報道(coindesk.com、8/13)。Cointelegraph・CryptoTimesも8/14、CLARITY Actの9月先送りに続き2026年の暗号資産規制マイルストーンが相次いで後ろ倒しになっているパターンだと確認(cointelegraph.com、cryptotimes.io、8/14)。CLARITY Act本体は8/14 20:00時点でも8/8のクローチャー提出・9/15採決日程確定から手続き面での新たな進展はない。The Block/CoinDeskは8/8、Thune院内総務がクローチャーを提出し9/15に本会議採決を行う日程を正式確定させたと報道、審議入りの目処は立ったが60票要件・倫理条項対立の解消は依然必要と伝えた(theblock.co、coindesk.com、8/8)。CryptoTimesは8/15、Reg Crypto採決中止に続き別トラックのトークン化免除規則も延期になったと報道、TechTimesは8/14、同じ週にCFTCが独自の暗号資産セッションを準備し規制権限がシフトしつつあると報道した(cryptotimes.io、techtimes.com、8/14-8/15)。8/16 20:00 JST時点でもCLARITY Act本体の手続き面での新たな進展は確認できていない。24/7 Wall Streetは8/16、Galaxy Researchが2026年内のCLARITY Act成立確率をわずか10%と試算していると報道、8/17 03:00 JST時点でも進展はない(247wallst.com、8/16)。24/7 Wall Streetは同8/16、Polymarketベースでも2026年内成立確率が2月ピーク82%から14%まで急落したと伝えており、Galaxy Researchの10%試算と近い水準にある。8/17 09:00 JST時点でも手続き面の新たな進展はない(247wallst.com、8/16)", desc:"cryptotimes.io・news.bitcoin.com・crypto.news・theblock.co・forbes.comは8/15、ホワイトハウスが8/19(水)にCoinbase・a16z・Ripple・Chainlink・Kalshi・Paradigm・Digital Chamber等の暗号資産・予測市場業界幹部を招集する会合を開催予定と報道、SEC委員長Paul Atkins氏の出席は確定、CFTC委員長Michael Selig氏も出席見込みとされる一方トランプ大統領本人の出席は「見込み」にとどまると伝えた。同8/15、crypto.news・tronweekly.com・ambcrypto.comは、CFTCが翌8/20(木)13:00〜16:00 ET・ワシントンで35人体制の初のイノベーション諮問委員会(Selig委員長主宰、Coinbase CEO Brian Armstrong氏・Ripple CEO Brad Garlinghouse氏ら委員)を開催予定と報道、第1セッション「Crypto's Regulatory Evolution: From Uncertainty to Clarity」では分断された州規制と連邦市場構造の欠如を議論すると伝えた(cryptotimes.io、news.bitcoin.com、crypto.news、theblock.co、forbes.com、tronweekly.com、ambcrypto.com、8/15)。crypto.news・beincrypto.comは同8/15前後(XRP価格約$1.009、「XRP Defends $1 by a Cent Since CLARITY Act Slipped. Now CFTC Steps In」と題した記事)、Polymarketの2026年内CLARITY Act成立確率について媒体により14%前後〜19%程度と報じられていると伝えた(crypto.news、beincrypto.com、8/15)。CoinDeskは8/13夜(米東部時間)、SECが8/14 10:00 ET(23:00 JST)に予定していた『Regulation Crypto』案(投資契約向け新規募集規制の枠組み)の採決会合を直前に中止したと報道、公式には「不測の日程調整上の問題」を理由に挙げ、新たな日程は発表されなかった(coindesk.com、8/13)。Cointelegraph・CryptoTimesも8/14、同会合の中止を確認、CLARITY Act(議会立法)とは別トラックのSEC単独ルールメイキングだったが両トラックとも足踏みが続いている状況だと論じた(cointelegraph.com、cryptotimes.io、8/14)。8/14 20:00時点でもCLARITY Act本体は8/8のクローチャー提出・9/15採決日程確定から手続き面での新たな進展の報道は確認できていない。CCNは8/8週、Polymarket予測市場が2026年内のCLARITY Act成立確率を27%前後(2月ピーク80%超から急落)と織り込んでいると報道、別集計では10%台まで低下したとの報道もあり、成立確率を巡る見方はなお流動的(ccn.com)。The Block・CoinDesk・CrowdfundInsiderは8/8、Thune上院多数党院内総務が休会入り直前に本会議への動議に対するクローチャー(討論終結)動議を提出したと報道、これにより9/15(会期再開翌日)に採決を行う日程が正式に確定した。もっともクローチャー提出は法案通過を意味せず、実際のクローチャー可決には60票が必要で、施行主体や倫理条項・違法資金対策条項・上院農業委員会案文の統合を巡る与野党対立は未解決のまま持ち越されたと伝えた(theblock.co、coindesk.com、crowdfundinsider.com、coinpedia.org、8/8)。cryptotimes.ioは8/8、スーン院内総務(共和党)が休会入り後もクローチャー動議を9月に提出する方針を維持していると報道、可決には共和党53票に加え民主党から7票の造反が必要で、ステーブルコイン報酬利回りへの銀行業界の反発と倫理条項を巡るホワイトハウスとの交渉が依然続いていると伝えた(cryptotimes.io、8/8)。coindesk.comは8/6、上院がCLARITY Actの本会議採決を8月の休会入り前に行わないことが確定したと報道。スーン院内総務(共和党)は広報担当者を通じ9月に採決を行う意向を確認したが、可決には民主党から約7票の造反が必要で倫理条項を巡る対立は未解決のまま、上院は9/14に本会議を再開する(coindesk.com、8/6)。crypto.newsは8/7、上院指導部が休会入り前に採決へ向けた手続き(クローチャー)を一切開始しなかったことを受け、予測市場の織り込みが2026年内成立から2027年へシフトしたと報道、Kalshiの『2027年7月1日までの発効』契約は8pt低下の41%、『2027年10月1日までの承認』契約は前週から横ばいの58%で推移していると伝えた(crypto.news、8/7)。cryptotimes.ioは8/7、スーン院内総務がクローチャー動議を一度も提出しないまま上院がCLARITY Actの本会議採決を行わずに休会入りしたと報道。ホワイトハウス高官は8/5(水)まで民主党と倫理条項の調整を続けたが間に合わず、次の審議機会は9/14の会期再開まで持ち越された。Kalshiの「休会前投票」契約は8/7時点で4.7%(37.6pt急落、出来高$861,615)、法案が2027年7月1日までに発効する確率も8pt低下の41%となった(cryptotimes.io、Kalshi、8/7)。cryptotimes.ioは同8/7、Polymarketの「休会前上院採決」契約も16%(直近37pt低下、出来高約$29,000、8/8決済予定)まで低下したと報じた(cryptotimes.io、8/7)。Benzingaは8/6、スーン院内総務が休会入り前の初期採決になお期待を示す一方、Polymarketの2026年成立確率は2月ピーク82%から過去最低の14%まで急落したと報道、Punchbowl Newsの報道として民主党はクローチャーに必要な60票確保に応じない構えで、トランプ大統領の$14億のミームコイン等収益とその既存保有資産を対象外とする倫理条項案が対立の核心だと伝えた。Lummis上院議員は「金曜には帰らないと思う、週末に入ってでも採決を得る」とMaria Bartiromo氏に語ったが、結局採決には至らなかった(Benzinga、8/6)。coingape.comは8/6、木曜(8/6)も上院がCLARITY Actの本会議行動を一切試みず継続予算決議・大学スポーツ保護法・司法長官候補人事などの採決を優先したと報道、休会入りまでの残り実働日はわずか4日となり週末の手続き投票の可能性は事実上消滅したと伝えた(coingape.com、8/6)。cryptotimes.ioは8/6、上院共和・民主両党のスタッフが過去24時間で複数回協議を重ねたものの倫理条項を巡る対立は依然解消していないと報道。Lummis上院議員は8/6、ほぼ1年に及ぶ交渉を経てもなお休会入り(8/10)前にCLARITY Actを取り上げると見込んでいると発言、Hagerty上院議員も本会議採決の実現を改めて要求した。Polymarketでは2026年内の同法成立確率が8/6時点で23%まで低下、「休会入り前の上院採決」に限定したマーケットの確率はわずか6%にとどまる(cryptotimes.io、Polymarket、8/6)。CoinGapeは8/5、上院多数党院内総務ジョン・スーン氏が水曜(8/5)中のクローチャー動議提出を見送ったと報道、継続予算決議の審議優先と60票確保の目処が立たないことが理由とみられると分析した(coingape.com、8/5)。cryptotimes.ioは8/5、Lummis上院議員が8/10の休会入り前の本会議行動を改めて求め、Thune院内総務は本会議時間を確保済みとされるものの着手時期は依然不透明だと報道、Tillis・Gallego両議員が倫理条項の改訂案をホワイトハウスへ提出したと伝えた。同じく8/5、Hagerty上院議員は水面下協議を続けるより公開の本会議採決で各議員の賛否を明確にすべきだと主張、中間選挙政治が民主党側の消極姿勢の一因になっているとの見方を示した(cryptotimes.io)。8/5は通常のクローチャー動議提出期限にあたり、提出されれば8/7に手続き投票(可決そのものではない)の可能性があるが、提出がなければ8月の審議機会は事実上失われ9月の会期再開まで持ち越される公算が大きい。Yahoo Financeは8/4、Polymarketの2026年可決確率が倫理条項対立の長期化やホワイトハウスが持ちかけた7/4署名式構想の頓挫など度重なる期限徒過を受け28%まで急落したと報道、2月時点の82%超からの大幅な低下だと指摘した。coinspectator.comは8/3、Coinbaseが示唆する週内(水木)のCLARITY Act手続き投票が実現するには、60票のクローチャー要件に伴う2日間の待機期間の関係で8/4(火)中にスーン院内総務が動議を提出できるかが真の分岐点になると分析、上院の休会前最終日は8/7(金)で木曜からは多くの議員が地元に戻る見込みだと指摘した。8/1にはホワイトハウスへ超党派の倫理条項対案が到達したと伝わり、トランプ大統領の回答が今週中に法案が動くか9月に持ち越されるかを左右する状況(coinspectator.com、8/3)。Warren上院議員(銀行委員会筆頭理事)は8/1公開の動画で改めて最新法案を「侮辱的(insulting)」と批判、「この最新の法案はカルテルやテロリストを含む犯罪者の資金移動を助長しかねず、投資家と金融システムの保護に失敗している」と述べ対立の根深さを印象付けた(bitcoinmagazine.com、SenWarren、8/1)。8/3、Coinbaseの最高政策責任者Faryar Shirzad氏はNewsNation出演時、CLARITY Actが超党派協議を経て必要な支持を得つつあり、早ければ週内(水〜木)にも上院本会議で手続き投票(procedural vote、可決そのものではない)にかけられ得ると発言、XRP強気派の期待を高めた(coinpaper.com、8/3)。もっとも24/7 Wall Streetは8/2、上院は8/7の休会入りまで残り5営業日しかなく、CLARITY Actは6/1以降いつでも本会議採決が可能な状態にありながらスーン院内総務が採決日程を一度も確定させておらず、ロシア制裁法案・政府高官人事の優先を理由に本格的な採決は9/14の会期再開(中間選挙前最後の現実的な審議機会)以降に持ち越される公算が大きいと分析、Polymarketの2026年可決確率は約30%にとどまると報じた(247wallst.com、8/2)。共和党53議席に対し賛成60票確保には民主党から追加7〜9票が必要ながら、Hawley・Paul両共和党議員が反対に回る可能性もあり確保できているのは2票前後とみられる。7/29、Yahoo FinanceとCoinDeskは、上院多数党院内総務ジョン・スーン氏が討論・修正・クローチャー(60票)動議を8/7の休会入りまでに完了させる時間が現実的に不足していると認めたと報じた。ロシア制裁法案審議や大量の政府高官人事承認が優先され、CLARITY Actの本会議採決枠が事実上消滅、審議は9月の中間選挙運動本格化前の会期にずれ込む公算が大きくなった。これを受けPolymarketの2026年可決確率は2月の80%超から25%前後まで急落(一時28%・37%等の中間値も観測)。下院通過済。上院銀行委員会は5/14に15-9で前進。上院共和党は7/22公開の616ページ統合案文で、大統領を含む政府高官の暗号資産発行・利益相反を2029年1月まで禁じる倫理条項をついに明記(Lummis上院議員主導・ホワイトハウス合意)。Lummis上院議員は7/24、取引所破綻時に顧客の暗号資産をChapter7の「顧客財産」として保護する規定(第701条)と詐欺対策・AML強化に約$1.5億を充てる最新条文を公表、全米警察友愛会(組合員38万2,000人超)も改訂版法案への支持を表明した(CryptoSlate、Forbes、7/24)。しかし施行主体を司法省(DOJ)単独とする案についてAlsobrooks上院議員は7/25までに改めて「unserious(不真面目)」と反発、州司法長官への権限付与を求める立場は変わらず。Warren上院議員(銀行委員会筆頭理事)も7/22、最新条文は投資家・金融システム・国家安全保障の保護に不十分と表明。7/28には上院がCLARITY Actの本会議採決を事実上棚上げし、連邦人事案件・ロシア制裁法案の審議を優先する運びとなったと報じられ、ビットコイン・イーサリアム・XRP合計で$6億超のロング清算を誘発(CCN)。共和党53議席に対し民主党の追加7〜9票が必要ながら確保できているのは2票前後とみられ、Polymarketの2026年可決確率は2月の80%超から33%前後まで低下した。もっとも7/29、上院トップのジョン・スーン院内総務は60票のハードルと倫理条項対立が未解決のまま残る中でも、8月休会入り前にCLARITY Actの本会議採決を行う方針を改めて表明、Galaxy Researchは可決確率をさらに慎重な30%まで引き下げた(crypto.news、7/29)。DailyCoinは7/26、上院共和党内の非公式集計として賛成が60票中51票程度にとどまると報道、倫理条項・DeFi開発者へのマネロン規制適用除外・ステーブルコイン報酬収益を巡る対立という3つの争点が採決を遅らせている。8月休会入り後は9月の中間選挙運動本格化前の約3週間が次の現実的な審議機会となる見込み(Phemex、7/28)。討論・修正・クローチャー動議を8/7の休会入りまでに完了させる時間が不足しているとの見方が広がる中、業界団体Solana Policy Instituteは7/28、スーン(共和党)・シューマー(民主党)両院内総務宛てに休会前の採決実施を求める書簡を送付。cryptonews.comは7/29、こうした遅延観測を受けPolymarketの2026年可決確率が35%前後まで低下したと報じている。coinspectator.comは8/3、60票のクローチャー要件に伴う2日間の待機期間の関係で、8/4(火)中にスーン院内総務が動議を提出できるかが週内採決実現の真の分岐点になると分析、ホワイトハウスに届いた超党派の倫理条項対案へのトランプ大統領の回答が焦点。可決確率はJPMorganが37%、Polymarketが27〜31%のレンジで推移と伝えられている(coinpaper.com、coinspectator.com、Yahoo Finance、8/1-8/3)。24/7 Wall Streetは8/2、上院が8/3に再開し休会入り(8/8週)まで実働5営業日しか残っていないと指摘、この間にクローチャー動議が提出されなければ本格採決は9/14の会期再開(中間選挙前最後の現実的な審議機会)まで持ち越される公算が大きいと分析(247wallst.com、8/2)。CoinGapeは、スーン院内総務が60票確保の見込みが薄いままでも休会前に本会議採決を強行し、全議員に賛否を記録させる構えだと報じている(coingape.com)。もっともYahoo Finance/Polymarketの8/4集計では、倫理条項を巡る対立でクローチャーに必要な民主党7票の確保が依然見通せないことから2026年可決確率は27〜30%まで再び低下したと伝えられている(Polymarket、Yahoo Finance、8/4)。News.Bitcoin.comは8/5、民主党上院議員団が(1)倫理条項の執行体制、(2)違法資金対策条項、(3)ステーブルコイン報酬利回りの3争点で共和党側が目に見える譲歩をしない限りクローチャーに結束して反対する方針を固めたと報道、Thune院内総務は8/4夜(火曜)の時点でクローチャー動議を提出せず、継続予算決議など他の手続き事情に加え票数不足も一因とみられると伝えた(news.bitcoin.com、8/5)。tech-insider.orgは8月中旬、上院が8/10の休会入りまでにクローチャー動議を提出できず、Thune院内総務が9/15に手続き投票を再設定したと報道、Polymarketの2026年内成立確率は14%前後まで低下したと伝えた(tech-insider.org、polymarket.com)。"},
+    {date:"2026-08-15", tier:"bad", t:"マクロ環境(FRB金利・地政学リスク・BTC相場全体)", s:73, d:"down", status:"cryptotimes.io・news.bitcoin.com・crypto.newsは8/15、ホワイトハウスが8/19に業界幹部を招集する会合を、CFTCが翌8/20に初のイノベーション諮問委員会を開催予定と報道(cryptotimes.io、news.bitcoin.com、crypto.news、8/15)。CryptoTimesは8/15、SECのReg Crypto採決中止に続きトークン化免除規則も延期になったと報道、規制イベントを見送った状態で相場は方向感を欠く展開が続く(cryptotimes.io、coindesk.com、8/13-8/15)。Fortuneは8/14、ビットコインが$62,853(24H安値$62,525〜高値$63,573、時価総額約$1.26兆、24H-0.65%)で推移していると報道(fortune.com、8/14)。イーサリアムは$1,882近辺(時価総額約$2,270億)、ソラナは$75.8前後(時価総額約$444億)で推移(8/16 20:00 JST時点、coingecko.com・coinbase.com調べ)", desc:"cryptotimes.io・theblock.co・forbes.comは8/15、ホワイトハウスが8/19にCoinbase・a16z・Ripple・Chainlink・Kalshi・Paradigm・Digital Chamber等の幹部を招集する会合を開催予定、SEC委員長Atkins氏の出席が確定・CFTC委員長Selig氏も出席見込みと報道。CFTCは翌8/20にワシントンで35人体制の初のイノベーション諮問委員会を開催予定で、規制の重心がSECからCFTCへ移りつつある兆しとして市場が注視していると伝えた(cryptotimes.io、news.bitcoin.com、crypto.news、theblock.co、forbes.com、8/15)。Yahoo Financeは8/13、ビットコインが木曜寄り付き$63,410.39($1,878.08のイーサリアムとともに前日比軟調)で始まり、中東情勢の緊張が続く中インフレ鈍化を示す統計を投資家が消化していると報道した(finance.yahoo.com、8/13)。Riotimes Onlineは8/13、米7月CPIが冷ややかな結果となった後もビットコインが$63,402近辺で横ばい推移していると報道、CoinGeckoの集計でもビットコインの時価総額は約$1.28兆・イーサリアムは約$2,306億(価格$1,878近辺)にとどまっていると伝えた(riotimesonline.com、coingecko.com、8/13)。米7月分CPI(消費者物価指数)は8/12 21:30 JST(8:30 ET)に発表され、前年同月比+3.4%・コアCPI+2.5%といずれも市場予想通りとなった。CryptoTimesは8/12、予想通りの結果を受けビットコイン・イーサリアム・XRPともに反応は限定的でレンジ内の値動きにとどまったと報道した(cryptotimes.io、8/12)。もっともCoinDeskは8/12、CPI発表を前にXRP先物の建玉(OI)が1時間で$171.74M(+20.46%)急増し10月以来の高水準に達したと報道、市場の警戒感の高さを示した(coindesk.com、8/12)。CoinDeskは8/11、ビットコインが火曜、$65,000上抜けに4度目失敗し$64,000近辺($63,955)まで軟化、$65,000上での売り持ち高積み上がりを指摘、200日移動平均線に近い$70,000が地合い転換の鍵になるとし、暗号資産センチメント指数は7月中旬以来「恐怖」圏の30近辺で推移していると報道した。イーサリアムは主要銘柄で最も弱く$1,878近辺(24H-2%超)まで軟化したと伝えた(coindesk.com、8/11)。CoinMarketCapは8/11 20:00時点、ビットコインが$65,000近辺での上値の重さを受け$63,893近辺(24H-1.92%)まで軟化、イーサリアムも心理的節目の$2,000を下回る$1,877近辺(24H-2.51%)で推移していると報道した(coinmarketcap.com、8/11)。CNBCは8/7、7月の米非農業部門雇用者数(NFP)が市場予想の+8万人増に反し2.3万人減少したと報道、失業率も前月の水準から4.1%へ上昇、平均時給の前年比伸びは3.2%と2021年5月以来の低水準になったと伝えた。BLS(米労働統計局)の公式統計としても裏付けられており、労働市場の急速な減速を受けCME FedWatch上では9月FOMCでの利上げ観測が大きく後退し、据え置きを織り込む確率が上昇したと報じられている(cnbc.com、bls.gov、8/7)。Sunday Guardian Liveは8/11、ビットコインが$65,000を維持できるか、イーサリアムが$2,000を目指せるかが今日の市場の焦点だと報道(sundayguardianlive.com、8/11)。TradingKeyは8/10、XRPがドル高・米国債利回り上昇と機関資金フローの鈍化を受け約1%下落したと報道、今週(8/10〜8/14)は米CPI・PPI・小売売上高の発表がドル・利回り・米国株の次の方向性を左右すると伝えた(tradingkey.com、8/10)。TradingKeyは8/9、XRPがマクロ環境の変化とドル指数(DXY)上昇を受け一時的に下落したと報道、取引所への流入増加とロング清算が観測され機関投資家のデレバレッジ(レバレッジ解消)を示唆していると伝えた(tradingkey.com、8/9)。CaptainAltcoinは同8/9、ビットコイン米国スポットETFが8/3以降5営業日連続の資金流入(合計約$8.5億)を記録し相場を下支えしていると報道した(captainaltcoin.com、8/9)。Yahoo Financeは8/7、7月雇用統計の発表を受けビットコインが寄り付きの$64,259.68から午前9時2分(ET)時点で$65,143.87へ、イーサリアムも$1,902.20から$1,929.36へ続伸したと報道した(Yahoo Finance、8/7)。coindesk.comは8/6、ビットコインは月初来+2%で$64,600近辺にとどまる一方、S&P500は月間+3.12%・時価総額+約$2.1兆(クリプト市場全体の時価総額にほぼ匹敵)を記録しており、原油安がインフレ懸念を和らげても米国債利回りとドルが下がらなければビットコインは$65,000近辺に張り付いたままになりかねないと分析した(coindesk.com、8/6)。同日coindesk.comは、CryptoQuantの分析としてイーサリアムが主要銘柄で唯一保有者平均取得コスト(約$2,450)を時価(約$1,900近辺)が下回る「含み損」状態にあり、ビットコイン・XRPは時価が取得コストを上回る一方、市場全体としてはまだ底打ちが確認できていない可能性を指摘した(coindesk.com、8/6)。FF金利3.50-3.75%で5会合連続据え置きの公算(FactSet調査、CBS News)。米軍が7/22、イラン革命防衛隊(IRGC)関連目標へB-1爆撃機による攻撃を実施したと報じられ、Brent原油は一時$95まで急伸後$89近辺へ落ち着くも米国債利回りは上昇しインフレ・リスクオフ懸念が強まった。BTCは7/23に付けた直近高値$66,920近辺から7/28朝(ET)にはYahoo Finance調べで$63,327.39(前日比2.5%安で寄り付いた後さらに下落)まで下落、ETHも$1,877.71(前日比3.2%安)まで下げたが、7/30朝(ET)にはBTCが$64,838.92近辺、ETHが$1,923.23近辺まで持ち直した(Yahoo Finance、7/30)。上院がCLARITY Act採決を棚上げしたと伝わった7/28、ビットコイン・イーサリアム・XRP合計で$6億超のロング清算が発生(CCN)。上院トップのスーン院内総務は7/29、8/7の休会入り前の本会議採決完了に時間が不足していると認め、Polymarket可決確率は25%前後まで急落(Yahoo Finance、7/29)。BTC現物ETFフローも一進一退で、2026年の年初来ネット流出額は約$54億規模で推移。BTCは大手ハードウェアウォレットColdcardのエクスプロイトにより約1,367BTCが盗まれたと伝わって以降、暗号資産市場全体のセンチメント悪化を引きずり8/3-8/4時点で$62,865近辺・時価総額約$1.25兆で推移、ETHも$1,869近辺・時価総額約$2,256億で推移(Yahoo Finance)。上院は8/3に再開し休会入り(8/8週)まで実働5営業日、24/7 Wall Streetはこの間にクローチャー動議が提出されなければCLARITY Actの本格採決は9/14以降に持ち越されると分析、可決確率はJPMorgan37%・Polymarket27〜31%(coinpaper.com、247wallst.com、8/2-8/3)。8/6朝(ET)時点ではBTC$64,052.56→$64,486.72、ETH$1,868.36→$1,880.89へ小幅続伸し、暗号資産全体の時価総額は前日比+0.84%の約$2.30兆まで回復、ホルムズ海峡情勢と米雇用統計を投資家が注視する展開(Yahoo Finance、8/5-8/6)。FXStreetは8/17、ビットコインが重要support の$62,300を維持できるかが焦点で$62,300〜$64,000のレンジ内推移になり得ると分析(fxstreet.com、8/17)。"},
+    {date:"2026-08-13", tier:"warn", t:"テクニカル(短期トレンド・移動平均)", s:58, d:"down", status:"Benzingaは8/13、XRP先物OIが10ヶ月ぶり高水準に達する中ホエールが下落局面でも買い増しと報道(benzinga.com、8/13)。U.Todayは8/13、XRPの技術的構造は依然弱気で日足RSIが約36.8まで低下、7/20/50/200日SMA($1.03/$1.06/$1.08/$1.31)が軒並み上値を塞ぐ弱気配列にあり、$1.06〜$1.08の回復が地合い安定の第一歩になると分析(u.today、8/13)。Cryptonomistは8/14、XRPがEMA20($1.04)・EMA50($1.09)・EMA200($1.35)全てを下回る教科書的な下落トレンド配列にあり、日足RSI14は35.86、Fear&Greed指数は29(Fear)と報道、8/16 20:00 JST時点も同様の弱気構造が継続(en.cryptonomist.ch、8/14)。thecoinrepublic.comは8/16、チャート上の節目として$1.18(抵抗)・$0.85・$0.77(下値候補)を挙げ、XRPレジャーの活動が2ヶ月ぶり高水準に上昇する一方SNS上のネガティブ言及は3ヶ月ぶり高水準に達したと報道、オンチェーン活動とセンチメント・チャートの綱引きが続くと分析した(thecoinrepublic.com、8/16)。Benzingaは8/16、XRPが$0.995近辺まで再下落し日足でdescending triangle(下降三角形)を形成中、明確な下放れで$0.80→$0.60→測定値ベースで約$0.48までの下落リスクがあると分析、8/17 03:00 JST時点でも同様の弱気構造が継続(benzinga.com、8/16)", desc:"Benzingaは8/13、XRP先物の建玉(OI)が8/1以来拡大を続け10ヶ月ぶりの高水準に達したと報道、ホエールが価格下落局面でも買い増しを続けている一方で価格自体は弱含みが続いていると伝えた(benzinga.com、8/13)。u.todayは8/13、XRPの技術的構造が依然弱気であるとし、日足RSIが約36.8まで低下し売られ過ぎ圏に近づきつつも未達で下押しの余地が残ると分析、7日・20日・50日・200日の各SMAがそれぞれ$1.03・$1.06・$1.08・$1.31に位置し軒並み上値を塞ぐ弱気配列にあり、地合い安定には$1.06〜$1.08帯の回復が最初の関門になると報道した(u.today、8/13)。FXStreetは8/12、Binance取引所のXRP準備高が2.61億枚超(約$26.8億相当)まで増加し潜在的な売り圧が高まる中、8月だけで約6.5%下落・7月高値$1.18からの累計下落率は約14%に達したと報道、弱気の技術的地合いが続いていると伝えた(fxstreet.com、8/12)。u.todayは8/12、XRPが$1.05〜$1.07帯のサポート喪失後、本日一時$1.006近辺まで下落し2024年11月以来初めて$1の心理的節目を割り込み、2025年以降で最も重要な支持構造の一つを無効化したと報道、下値には明確な支持が乏しく、売りが加速すれば次の潜在的な需要ゾーンは$0.95、さらに$0.90になり得るとし、XRPレジャーの活動が引き続き高水準にある中での下落である点が注目されると伝えた(u.today、8/12)。もっともXRPはその後$1.01〜$1.02近辺まで持ち直している。米7月分CPIは8/12 21:30 JST(8:30 ET)に発表され、前年同月比+3.4%・コアCPI+2.5%といずれも市場予想通りとなり、CryptoTimesは反応が限定的でレンジ内の値動きにとどまったと報道した(cryptotimes.io、8/12)。CoinDeskは8/12、CPI発表を前にXRP先物の建玉(OI)が1時間で$171.74M(+20.46%)急増したと報道した(coindesk.com、8/12)。Benzingaは8/12、XRPが年初来約45%下落し時価総額が$65Bを割り込む中、2025年7月14日以来の下降抵抗線と上昇支持線が収束するfalling wedge(下降ウェッジ)を形成していると分析、地合い転換には$1.18奪還が最初の関門になると指摘した(benzinga.com、8/12)。cryptotimes.ioは8/11、XRPが広範な暗号資産市場の圧力と機関資金フローの鈍化の中でも心理的節目の$1近辺で推移し続け、8/12発表の米CPIが当面のボラティリティ要因として注視されていると報道した(cryptotimes.io、8/11)。U.Todayは8/11、XRPが$1.00の心理的節目を巡る攻防が続く中、$1.00〜$1.03が重要な支持ゾーン、$1.06〜$1.08が最初の抵抗ゾーンで、これを回復できれば$1.12が視野に入るとし、日足RSIはシグナル平均41.7を下回る約38.3で推移していると報道した(u.today、8/11)。Benzingaは8/10、XRPが日曜(8/9)の週足終値で2024年11月以来毎週守られてきた$1.04のサポートを割り込み、直近約2年で最も低い週足終値を記録したと報道。明確な週足割れが確定すれば次の目標は$0.75になるとし、Polymarketは月末までにXRPが$1を割り込む確率を65%と織り込んでいると伝えた。もっとも直近1週間でホエールが3.8億XRPを積み増しており、$1.06を月足終値で上抜ければ$1.35、次いで$1.64が視野に入るとの見方も併記した(benzinga.com、8/10)。FXStreetは8/10のAmerican Wrapで、XRPが$1.00の直近サポートを死守しているものの下降する主要移動平均線に上値を抑えられ弱い技術的地合いが続いていると報道した(fxstreet.com、8/10)。DailyCoinは8/9、XRPホエールが直近1週間で3.8億XRPを積み増し保有総量が81.3億XRPに達したと報道、月足のTom DeMark Sequentialが買いシグナルを点灯させ、$1.06の抵抗を上抜ければ$1.35、次いで$1.64が視野に入ると分析した(dailycoin.com、8/9)。TradingKeyは8/10、XRPがドル高・米国債利回り上昇と機関資金フローの鈍化、クロスボーダー決済の銀行提携面での即効性欠如を受け約1%下落し$1.02〜$1.03近辺で推移していると報道した(tradingkey.com、8/10)。99bitcoins/Yahoo Financeは8/9、XRPが1月高値$2.41から約43%安の水準で8月をスタートし、8月序盤に付けた底値$1.0480から反発して$1.0818近辺で推移、月初来リターンは+1.93%になっていると報道。13年連続の季節性データとして「8月はレンジ、Q4に急伸」というパターンが繰り返されてきた点も指摘した(99bitcoins.com、tradingview.com、8/9)。TradingKeyは8/9、XRPがマクロ環境の変化とドル指数上昇を受け一時的に下落、取引所への流入増加とロング清算が機関投資家のデレバレッジを示唆していると報道した(tradingkey.com、8/9)。cryptonomist.chは8/8、XRPが日足ボリンジャーバンド下限の$1.01近辺に張り付き、20日EMA($1.07)・50日EMA($1.11)・200日EMA($1.38)がいずれも右肩下がりで上値を塞ぐ弱気配列にあると報道。日足RSIは35.85で弱いが売られ過ぎには至っておらず、MACDはマイナス圏で緩やかな売り圧の継続を示唆、$1.01を終値で割り込めば下放れリスクがあり、$1.06(時間足)・$1.08(日足)の回復が地合い改善の第一歩になると分析した。XRP特化の恐怖・強欲指数は30(Fear)、暗号資産市場全体の時価総額は約$2.29兆で推移していると伝えた(cryptonomist.ch、8/8)。thecryptobasic.comは8/7、XRPが8/6の日足終値で年初来最安値の$1.027を記録したと報道、$1.00の心理的節目を割り込むリスクが再び意識されていると伝えた(thecryptobasic.com、8/7)。テクニカル指標ではRSI(14日)が約29まで低下し売られ過ぎ圏、直近支持は$1.00〜$1.03、抵抗は$1.11→$1.19→$1.30の順、50日移動平均は$1.11・200日移動平均は$1.36といずれも上値の壁になっている(bravenewcoin.com、investing.com、8/7)。CryptoQuantアナリストAmr Taha氏は、Binance建てXRP建玉が8/4の約$1.8億から8/7には約$1.95億へ8%増加したと分析した(cryptonews.net、8/7)。cryptonews.netは8/6、Fear & Greedインデックスが25(Extreme Fear)まで低下し、XRPは日足ピボットかつボリンジャーバンド下限の$1.04近辺という重要な支持水準上で推移していると報道。MACDは-0.005で売りシグナル、RSIは38.920で中立、Williams %Rは-99.123で売られ過ぎ圏を示し、直近支持は$1.04(日足S1・ボリンジャー下限)、抵抗は$1.06(時間足・R1ピボット)→$1.08(日足20日EMA)→$1.09(ボリンジャー中央)の順に控えると分析、規制面の摩擦とアクティブアドレス増加の一服がモメンタム系トレーダーの手仕舞いを誘発していると指摘した(cryptonews.net、8/6)。crypto.newsは8/5-8/6、XRPの建玉(OI)が過去6ヶ月レンジの下限である3.62億〜3.69億ドルまで低下し、推定レバレッジ比率も0.139〜0.142まで縮小したと報道、資金調達率(ファンディング)はマイナス0.009〜プラス0.010のレンジで推移しロング・ショート両方の清算が交互に発生しており強制ロスカットの一方向的な連鎖ではなくポジション整理が進んだ兆候だと分析した(crypto.news)。The Crypto Basicも8/5、レバレッジが新安値まで急落したと報じている(thecryptobasic.com)。TradingKeyは8/6、XRPが前日比-2.45%下落したと報道(tradingkey.com、8/6)。Benzingaは8/4、XRP ETFへの4営業日連続の資金流入(合計約$15.4M)にもかかわらずXRPが2ヶ月超続くディセンディング・トライアングルの頂点で$1.08近辺に張り付いたままだと指摘、$1.05の下値ラインが$1.00までの調整を防ぐ唯一の防衛線になっていると分析した(Benzinga、8/4)。FXStreetは8/5、CryptoQuantアナリストAmr Taha氏の分析としてXRPが2日連続で下落していると報じた。XRPは7/21、symmetric triangleのブレイクアウトを確定させ$1.16の2週間ぶり高値を記録、Parabolic SARは$1.0609で強気転換した(Benzinga)。日足では6/6安値$1.05を起点とするinverse head-and-shoulders(逆三尊)が7/21の反発で右肩を完成させブレイクアウトも確定、上値目標は16%高の$1.32(The Crypto Basic、7/23)。だが7/27夜(20:00 JST)の$1.1121(TradingKey)→7/28朝(09:00 JST)の$1.09→7/28夜(20:00 JST)の$1.05→7/29未明(03:00 JST)の$1.06を経て、7/29 14:00 ET発表のFOMCがFF金利3.50-3.75%を据え置いたことを受け7/30未明(03:00 JST)の$1.08→7/30朝(09:00 JST)の$1.07を経て、ETF資金流入再開も支えに7/30夜(20:00 JST)〜7/31朝(09:00 JST)には$1.10近辺まで続伸するも、7/31夜(20:00 JST)の$1.09近辺から8/1夜(20:00 JST)には$1.06近辺まで再び軟化、8/3朝(09:00 JST)には上院再開・Coinbaseの手続き投票期待で$1.08近辺まで反発した後、8/1のRipple月次エスクロー解放(10億XRP解放・純新規供給約3億XRP)による潜在的な売り圧が意識され8/3夜(20:00 JST)時点は$1.07近辺まで小幅軟化(FX Leaders・CaptainAltcoin、8/3)。cryptonomistは7/31時点でXRPが$1.07で全ての主要日足移動平均(EMA20 $1.09・EMA50 $1.13・EMA200 $1.42)を下回る弱気配列にあると指摘、日足RSIは42.47でオーバーソールドには未達のまま軟調を示唆、ATRは$0.03と値動きの乏しさが続く(cryptonomist、7/31)。FX Leadersは8/3、RSIは46〜47の中立圏で$1.045〜$1.066の支持を防衛中と分析、EMA20・50が位置する$1.13〜$1.14帯が当面の抵抗と指摘。bitcoinfoundation.orgは7/28、$1.04〜$1.00が繰り返し支持を試されてきたゾーンで、日足終値でこれを割り込むと$0.85〜$0.90までの調整リスクが高まると指摘。The Crypto Basicは7/25、日足に下降チャネル(descending channel)が形成されているとし、チャネル下限の$0.9223(2025年7月高値$3.60比75%安)まで調整が深まるシナリオを紹介する一方、$0.80近辺を死守できれば今回の下落局面の底になり得るとの見方も併記した。先物OIのZ-scoreは1.60まで上昇しレバレッジ再燃の兆し(CryptoQuant、7/23)。直近レジスタンス帯は$1.17〜$1.24、これを上抜けられるか、$1.045〜$1.00を死守できるかが当面最大の分岐点。CoinGabbarは8/3、エスクロー解放後もXRP現物ETFが約9.9億枚をロックしAUMは$1B弱を維持する一方、XRPLのステーブルコイン供給は過去7日間で13.06%減少したと報道(coingabbar.com、8/3)。u.todayは8/3、RSIが47近辺の中立圏でブル・ベアどちらの勢いも示していないとし、50日EMA($1.09近辺)の回復が強気転換の第一関門と分析。The Crypto Basicは8/3、アナリストJay Nisbett氏が8月中は$1.02〜$1.30台のレンジを軸としつつ、強気バイアスの下で$1.60〜$2.50までの短期的な急伸シナリオもあり得るが長続きはしないと分析していると報じた。themarketperiodical.comは8/2、XRPが$1.05近辺で下値を固めXRPL v3.3.0アップグレード(RippleXのJazzi Cooper氏が7/31に来週稼働を予告、5つのアメンドメントを含む)のバリデータ投票開始を待つ展開にあると報道、80%以上の承認が2週連続で得られるまで各機能は有効化されない(themarketperiodical.com、cryptopolitan.com)。AltIndexは8/4、XRPが上昇支持トレンドライン($1.0510近辺)の上で推移する一方、下降抵抗トレンドライン($1.1123)と50日EMA($1.1194)に上値を抑えられ収束型のシンメトリカルトライアングルの内部にあると分析、日足RSIは41まで低下し売り圧がやや優勢だが売られ過ぎには至っていないとした(altindex.com、8/4)。FXStreetは8/17、XRPが$1近辺でモメンタムを失いつつあり$0.95〜$1.05のレンジ推移になり得ると分析(fxstreet.com、8/17)。"},
+    {date:"2026-08-15", tier:"good", t:"ホエールの蓄積・取引所からの引き出し", s:83, d:"up", status:"cryptotimes.ioは8/15、XRPのSNSセンチメントが過去3ヶ月で最も弱気な水準に達した一方、XRPレジャーの日次アクティブアドレスは24時間で49,929件と2ヶ月超ぶりの高水準に達したと報道、弱気心理とオンチェーン活動上昇の乖離が逆張りシグナルとして注目されていると伝えた(cryptotimes.io、8/15)。thecryptobasicは8/13、Santimentデータとして日次アクティブアドレスが8月平均35,700(7月26,400から約35%増、8/11は6/5以来の高水準)に達した一方、新規アドレス作成数はほぼ横ばいで既存保有者の活動活発化が主因と報道(thecryptobasic.com、8/13)。Benzingaは8/13、XRP先物OIが8/1以来拡大を続け10ヶ月ぶりの高水準に達する中、ホエールが価格下落局面でも買い増しを継続していると報道(benzinga.com、8/13)。24/7 Wall Streetは8/12、大口ホエールが8/9までの1週間で3.8億XRP超(時価約$3.9億相当)を積み増し、100万XRP以上保有ウォレット数が過去3ヶ月で32件増え約2,033件に達した一方、時価総額は同期間に29%減少、先物OIは2.74億枚まで積み上がり10ヶ月ぶり高水準になったと報道(247wallst.com、8/12)。CoinGapeは8/12、アクティブアドレス数が8/1〜8/11で84%急増と報道(coingape.com、8/12)", desc:"Benzingaは8/13、XRP先物の建玉(OI)が8/1以来拡大を続け10ヶ月ぶりの高水準に達したと報道、ホエールが価格下落局面でも買い増しを続けている一方、価格自体は上値の重い展開が続いていると伝えた(benzinga.com、8/13)。24/7 Wall Streetは8/12、大口ホエールが8/9までの1週間で3.8億XRP超(時価約$3.9億相当)を積み増したと報道、100万XRP以上を保有するウォレット数は過去3ヶ月で32件増加し約2,033件に達した一方、その間にXRPの時価総額は29%減少したと伝えた。CryptoQuantの90日ベースのテイカー累積出来高デルタは中立圏まで戻っており、大口が成行で買い上げるのではなく指値で待つ姿勢に転じていることを示唆、上昇再開には月足終値で$1.06を上抜く必要があり、次の供給の壁は$1.35・$1.64になるとの見方を伝えた。もっとも無期限先物の建玉(OI)は価格が下落する中でも2.74億XRPまで積み上がり10ヶ月ぶりの高水準に達しており、これは保有者の投げ売りというより新規ショートの積み上がりを示唆すると分析した(247wallst.com、benzinga.com、8/12)。CoinGapeは8/12、Santimentのデータとしてアクティブアドレス数が8/1の23,642から8/11には43,543へ84%急増し、100万XRP超保有ウォレットも5月以降の3ヶ月で32件増加したと報道、RLUSDの普及拡大とXRPレジャーのトークナイゼーション・決済領域への拡張を背景にホエールが強気に転じつつある一方、小口投資家の売りが続き、ホエール買い増しが始まった3ヶ月間で時価総額は29%減少したと伝えた(coingape.com、8/12)。Benzingaは8/10、XRPが週足終値ベースで2024年11月以来最も低い水準まで軟化する中でも、直近1週間のホエールによる3.8億XRP積み増しは現在の価格水準に対する確信の表れだと分析、$1.06を月足終値で上抜ければ$1.35、次いで$1.64が視野に入るとの見方を伝えた(benzinga.com、8/10)。DailyCoinは8/9、Ali Chartsのデータとして大口ホエールが過去1週間で3.8億XRP超を積み増し保有総量を81.3億XRPまで拡大したと報道、現在の水準での確信の表れと分析、月足のTom DeMark Sequentialインジケーターが弱気から強気へのモメンタム転換を示唆する買いシグナルを点灯させたと伝えた(過去には2020年4月に1,074%の急騰局面でも同様のシグナルが出現)。$1.06の抵抗を上抜ければ$1.35、次いで$1.64が視野に入るとした(dailycoin.com、8/9)。U.Todayは8/10、Rippleが月曜(8/10)にXRPL上で$10M相当のRLUSDをミントしたと報道、時期的に重なったホエールの3.8億XRP積み増しとの直接の因果関係は確認されていないと伝えた(u.today、8/10)。The Blockは8/5、CryptoQuantの分析としてビットコイン・イーサリアム・XRPの大口保有者(ホエール)がいずれも価格が実現価格近辺またはそれを下回る水準で積み増しを続けており、これはサイクル終盤の「後期弱気相場」の特徴と一致すると報道。100万〜1億XRP保有帯の残高は流通供給の11.79%まで上昇(前日の11.65%から拡大)、10万〜100万XRP保有帯は2月時点の108.7億XRPから117.9億XRPまで積み増したと伝えた。CryptoQuant調査部門責任者のJulio Moreno氏は、この積み増しが下値圧力を緩和しサイクル終盤のパターンと一致するとしつつも、市場全体としては底打ちがまだ確認されておらずさらなる下落の余地も残ると指摘した(theblock.co、8/5)。thecryptobasic.comは8/7、10万〜100万XRP保有帯のホエールが2026年通年で約12.3億XRPを積み増したと報道、価格が年初来約43%下落する局面でも一貫した買い増しが続いていると分析した(thecryptobasic.com、8/7)。coindesk.comは8/6、CryptoQuantの分析としてXRPホエールが1月の$2.40近辺から現在の$1.00〜$1.20レンジまでの下落局面を通じ一貫して買い増しを続けており、これは資本逃避や急反発の予兆ではなく静かな吸収(quiet absorption)のパターンだと報道。XRP現物市場の平均取引サイズは大口ホエール相当のレンジ内にとどまり、90日ベースのテイカー累積出来高デルタ(CVD)が中立圏にあることから、積極的な成行買いというより受動的な出来高吸収が進んでいると分析、XRPの実現価格(約$0.75)に対し時価(約$1.10前後)は上回っており、価格調整局面でのホエール残高増加は過去に市場の底形成と関連してきたシグナルだとCryptoQuantは指摘した(coindesk.com、8/6)。CryptoQuantアナリストAmr Taha氏は8/5、Binanceでは100万XRP超の大口出金が引き出し全体の55%超を占める一方、Coinbaseでは10万〜100万XRP規模の「シャーク」層が出金の55.8%を占めると分析、取引所ごとの資金移動パターンの違いを指摘した(FXStreet、8/5)。FXStreetは8/5、CryptoQuantアナリストAmr Taha氏の分析としてBinance・Coinbase間でXRP大口の出金構成が異なると報道。Binanceでは100万XRP超の送金が引き出し全体の55%超を占めた一方、Coinbaseでは10万〜100万XRP規模の「シャーク」層による出金が6/1時点の約35%から8/3には55.8%まで拡大、両取引所で異なる資金移動パターンが観測されている(FXStreet、8/5)。The Crypto Basicは8/4、Binance・Coinbase間でXRPホエールの出金動向に40%の乖離が生じていると報道、8/3にBinanceの取引所供給比率が0.03まで低下、100万XRP超の送金が同日出金額の55.3%を占めたと伝えた(thecryptobasic.com、8/4)。Binance向けXRPホエール入金はピークの約5.83億XRP(約$13.6億相当)から約2,530万XRP(約$23M相当)まで減少し2025年1月以来の低水準、90日平均も$4.6億から$6,900万まで縮小した(Benzinga)。Binance取引所のXRP準備高は約26.1億XRPまで縮小し2026年2月以来の低水準(CoinCentral、crypto.news)。もっとも30日ベースのホエール流入額は約9.47億XRPまで低下し2ヶ月ぶりの低水準となっており、大口の慎重姿勢がにじむ一方、Binanceからの大口出金額も30日ベースで約8.85億XRPと2ヶ月ぶりの低水準に減少しており、ホエールの取引所離れは入出金両面で一服しつつある(BigGo Finance、7月下旬)。CryptoQuantアナリストのPelinayPA氏は7/30、10万〜100万XRP・100万XRP超の大口取引がいずれも減少しており、積み増しにも売却にも動いていない『様子見(waiting phase)』にあると指摘、過去のXRP強気相場はホエール主導だっただけに流動性の低下は方向感の乏しさにつながるとの見方を示した(thecryptobasic.com、7/30)。10万〜1億XRP保有ウォレットは過去5週間で残高を+2.8%積み増す一方、0.01XRP未満の超小口ウォレットは-5.2%減少しており大口と小口の温度差が鮮明(BeInCrypto、7/28)。取引所からの純流出に占めるホエールの比率も7/22に過去最高77.8%に到達し、小口投資家はわずか22%と過去最低水準(The Crypto Basic、7/22)。もっとも現物買いが強さを見せる一方、Binance無期先物のCVDは低水準でレバレッジ筋の弱気ポジションが積み上がる乖離も観測されている(The Crypto Basic)。10万〜1億XRP保有ウォレット(ホエール層)は7/11-15の1週間だけで約7,000万XRPを積み増し合計保有量は約38.3億XRPに拡大した(CoinPaper、crypto.news)。crypto.newsは同期間について、1M〜1000万XRP保有ウォレットの合計残高も約3.71億XRPから約3.83億XRPへ増加したと報じ、XRP先物OIは約$2.5B超と2026年の高水準に達したと伝えている。The Crypto Basicは8/4、BinanceとCoinbaseでXRPホエールの出金動向に40%の乖離が生じていると報道、8/3にはBinanceの取引所供給比率が0.03まで低下し100万XRP超の大口送金が同日出金額の55.3%を占めるなど、大口の取引所離れが加速する兆候を指摘した(thecryptobasic.com、8/4)。weex.comは8月中旬、ホエールが1日あたり1,000万XRP超を積み増しBinanceからの大口流出が取引所流出全体の91%を占め2024年以来の高水準になったと分析(weex.com)。"},
+    {date:"2026-08-16", tier:"warn", t:"現物XRP ETFへの資金流入", s:28, d:"down", status:"Coinpediaが8/8に報じた週間流入93%減($1.01M)・AUM$964Mが直近の週次集計。Benzingaは8/16、8月の月間流入がこれまでのところ$3.27Mにとどまり7月の$27Mから急減速していると報道(coinpedia.org、8/8、benzinga.com、8/16)。24/7 Wall Streetは8/16、XRP現物ETFへの買いがローンチ以来96%減少していると報道、Standard Charteredが示す最大$8Bの強気な流入予測に届くかは不透明だと指摘した。8/17 09:00 JST時点でもこれを更新する新たな週次集計は確認できていない(247wallst.com、8/16)", desc:"8/16 20:00時点でCoinpediaが8/8に報じた週間流入93%減($1.01M)・AUM$964Mを更新する新たな週次集計は確認できていない。thecryptobasic.comは8/7、XRP現物ETFが8/6にBitwise($289万)・Franklin TempletonのXRPZ($56.2万)の資金流入により合計$345万のネット流入となったと報道、8/5に記録した約1ヶ月ぶりの純流出($358万)から一夜で反転したと伝えた。累計流入は約$1.51B・AUM約$1.0B・XRP約9.924億枚をロック(thecryptobasic.com、8/7)。CoinGabbarは8/6、XRP現物ETFが8/5にBitwiseファンド単独主導で$358万のネット流出を記録したと報道、価格は24H -1.65%・7D -3.24%程度まで軟化し時価総額は約$657億にとどまったと伝えた(coingabbar.com、8/6)。Benzingaは8/4、XRP現物ETFが8/3までの4営業日連続で資金流入(合計約$15.4M)を記録した後、8/4はネット流入ゼロにとどまったと報道、価格が$1.05近辺まで軟化する中でも機関マネーの流入ペースは一服している(Benzinga、8/4)。Benzingaは8/4、XRP現物ETFが4営業日連続の資金流入を記録したと報道、Canary CapitalのXRPC(NASDAQ:XRPC)が8/3の唯一の流入元となりBitwise・Franklinは同日資金の動きがなかったとしつつ、機関投資家が価格の確認を待たずに弱含みの局面で買いを入れていると分析した(Benzinga、8/4)。7銘柄が稼働。直近週は+$8.15Mの純流入でネット資産(AUM)は約$999.25Mまで回復、XRP約9.79億枚をロック(価格変動に伴い微調整、coingabbar.com)。ローンチ以来の累計流入はThe Crypto Basicが7/30に伝えた最新集計で過去最高の$1.50Bに到達、発行体別ではBitwiseが$500M(構成比33%)で首位、Canary Capitalが$466.97M(31%)で2位、Franklin TempletonのXRPZが$422.45M(3位)、GrayscaleのGXRPが$131.46M(4位)。もっとも7月の月間純流入は最終的に$27.29Mにとどまり、6月の$59.46Mから鈍化(4ヶ月連続プラスは維持、247wallst.com/Yahoo Finance、8/1)。XRPは年初来下落しているにもかかわらずETFはほぼ毎月プラスの純流入を維持しており、短期の価格actionとは切り離された機関マネーの継続的な資金定着を示唆(thecryptobasic.com、7/30)。24/7 Wall Streetは8/1、JPMorganが2025年に予測した初年度最大$8Bの流入規模に対し実績が$1.5B前後(AUM$988.78M)にとどまっている背景として、XRP価格がETF上場時の半値近辺まで下落し保有資産の評価額が目減りしている点を指摘、CLARITY Act成立こそが流入拡大の鍵と分析(247wallst.com)。Benzingaは8/2、来週予定のXRPL v3.3.0アップグレード(confidential MPT導入)を前に直近週+$14.8Mの流入があったと報じた(Benzinga)。CoinGabbarは8/3、8/1のRipple月次エスクロー解放(10億XRP解放・純新規供給約3億XRP)後もXRP現物ETF全体が約9.9億枚のXRPをロックし続けAUMは$1B弱を維持していると報道、ETF需要がエスクロー由来の潜在供給圧力を一部相殺している構図が続く(coingabbar.com、8/3)。Benzingaは8/3、来週稼働予定のXRPL v3.3.0アップグレードを控えETFへの資金流入が加速していると報じており、上院のCLARITY Act審議動向と並んで今後数週間の資金フローを左右する材料として意識される(benzinga.com、8/3)。coinmarketcap.comは8/17、現物XRP ETF7銘柄の合計AUMが約$994Mに達したと報道、cryptonews.comは8/14、Wells FargoがBitwise XRP ETFに約$9.18M相当のポジションを開示し今四半期最大の機関投資家になったと報道した(coinmarketcap.com、8/17、cryptonews.com、8/14)。"},
+    {date:"2026-08-16", tier:"warn", t:"RLUSD / Open USD ステーブルコイン拡大", s:48, d:"down", status:"Benzingaは8/16、RLUSDの時価総額が年初来高値$1.81Bから$1.71Bへ縮小、XRPLのTVLも高値$115Mから$29Mへ落ち込み、チェーン手数料も2024年Q4ピークの$1.4Mから2026年Q1時点で$48,120まで減少したと報道、実需の勢いに陰りが見えると分析(benzinga.com、8/16)。CoinDeskは8/4、FlareのラップドXRP(FXRP)がSentora運用の$280M規模RLUSD貸出プールの担保として承認され、Morpho Blue上でXRP保有者がRLUSDを借り入れ可能になったと報道、XRP関連資産で初の機関級DeFi担保と伝えた(coindesk.com、8/4)。8/17 09:00 JST時点でも実質的な変化はない", desc:"CoinDeskは8/4、FlareのラップドXRP「FXRP」がSentoraが運用する$280M規模のRLUSD貸出プールの担保として承認され、Morpho Blue上の新規アイソレート市場を通じXRP保有者がイーサリアム上でRLUSDを借り入れ可能になったと報道。市場の挙動・オラクル設計・流動性・清算能力を機関投資家向けリスクフレームワークで審査した上での承認で、XRP関連資産が機関級のDeFi担保として承認された初のケースとした。もっともこれまでのFXRPミント額は約1.55億枚にとどまり、Flareが掲げる6ヶ月で50億XRPを取り込む目標にはなお遠いと伝えた(coindesk.com、8/4)。U.Todayは8/10、Rippleが月曜(8/10)にXRPL上で$10M相当のRLUSDを新規ミントしたと報道、DailyCoinが同8/9に報じたXRPホエールの直近1週間で3.8億XRP積み増しと時期が重なったものの、両者を結びつける直接的な証拠はないと分析した(u.today、8/10)。blockonomi.comは8/6、Rippleが3署名者体制のトランザクションで811,026 RLUSDを新規ミント(手数料0.000405 XRP、XRPScan台帳#106,109,031で確認)、これによりXRPL上のステーブルコイン供給に占めるRLUSDの比率が50%を突破したと報道、ローンチ以来の累計取引高は$2.5Bを超えたと伝えた。Rippleは新規ミントの具体的な理由を公表していないが、取引所流動性や機関決済・トレジャリー需要への対応が通例の背景だと分析した(blockonomi.com、8/6)。時価総額は約$1.5B(6/17ピークの約$1.64Bから調整)。Rippleは7/24、機関投資家向けにRLUSDの発行・償還・ブリッジ・追跡を自動化する基盤「Ripple Mint」を発表し、対応チェーンをXRPL EVMサイドチェーン・Base・Optimism・Ink・Unichainへ拡大。Rippleは7/28、2,300超の機関・100以上の法域をつなぎ年間約$2兆相当の取引量を処理するB2Bステーブルコイン決済基盤「Notabene Flow」にRLUSDを統合すべくNotabeneへ戦略的出資を実施したと発表(fintech.global、CryptoPotato)。もっとも月間送金取引量は$146億から$109.5億(約$108.9億、CryptoPotato試算)へ約25〜26%減少した一方、保有者数は+6%、アクティブアドレス数は+70%増加しており、『使われる』段階から『保有される』段階への移行を示唆(CoinDesk、7/24)。Rippleは7/14に1,000万RLUSDを追加バーンし7/6以降の累計バーン額は8,000万RLUSDに、直近には$225M相当の新規ミントもあり供給は伸縮を続ける。XRPL建てRLUSDは6/26にイーサリアム上の供給を上回って以降首位を維持しており、直近では約$810M(構成比51.7%)対イーサリアムの約$756M(48.3%、1ヶ月前は逆にイーサリアムが$300M超上回っていた)まで差を広げている。BinanceはRLUSD保有者の裾野拡大策として、7/17〜8/14の期間中毎週XRPを分配する総額$80万相当のエアドロップキャンペーンを実施しており、Binance Earn・Margin・Futuresの対象ユーザーに配布される(MEXC News調べ)。CoinGabbarは8/3、DeFiLlamaのデータとしてXRPL上のステーブルコイン供給全体が過去7日間で13.06%減少し$987.76Mから$853.38Mへ縮小したと報道、RLUSDが最大構成要素であるだけに実需の勢いにやや陰りが見える可能性がある一方、単月の変動である点には留意が必要(coingabbar.com、8/3)。"},
+    {date:"", tier:"warn", t:"銀行がXRPでなくRLUSD/法定通貨で決済する傾向", s:55, d:"down", status:"構造的懸念・継続", desc:"大手銀がRippleNet経由でもRLUSD・フィアットを選好との分析。「XRP=ブリッジ資産」テーゼ最大のリスク。ただしRLUSD自体の流通量も5月ピークから約20%減と調整局面に入っており、代替リスクの短期的な進行速度はやや不透明。"},
+    {date:"2026-07-21", tier:"good", t:"x402 Foundation参加 & Ripple Prime機関基盤拡大", s:52, d:"up", status:"AIエージェント決済が140万件超に拡大、Ripple Prime収益は買収後3倍(Benzinga、7/21)", desc:"RippleがVisa・Mastercard等と並ぶプレミアムメンバーとして参画したAIエージェント決済規格「x402」は、XRPL AI Starter Kit公開から4週間で140万件超のエージェント決済(1件$0.0002)を記録。7/20にはJPMorgan・Mastercard・Ondo Financeとの提携で、Ondoの短期米国債ファンド(OUSG)をXRPレジャー上でトークン化しほぼリアルタイムのクロスボーダー償還を行うパイロットを完了(JPMorganのKinexysが法定通貨側を処理、CryptoSlate)。機関向けブローカレッジ子会社Ripple Prime(旧Hidden Road)は買収後に収益が3倍に伸び年間清算高は$3兆を突破、機関顧客300超の規模に。国際CEOのMichael Higgins氏は担保・流動性・決済がブロックチェーン網へ移行する「ウォール街2.0」の基盤構築を進めていると発言、Neuberger Specialty Financeから$2億の与信枠も確保(Benzinga、7/21)。新設の「XRP担保証書」により機関投資家はXRPを売却せずCME先物などの米ドル建て信用枠を確保できるようになり、XRPが決済資産から機関担保資産へと用途を広げつつある。Rippleは7/22、CNBC/Statista「世界のフィンテック企業トップ」に4年連続で選出された。英大手資産運用会社Aviva Investorsは7/29、RippleおよびKomainu(カストディ)・Licuido(トークナイゼーション基盤)と組みUSD Liquidity FundのトークナイズドシェアクラスをXRPレジャー上で稼働、資産はBNY Mellonが保管し、アイルランド中央銀行が承認した初のトークン化ファンド構造として他の資産運用会社への先例となった(crypto.news、cryptonews.net、7/29)。"},
+    {date:"2026-07-20", tier:"good", t:"XRPL-Axelar連携によるクロスチェーンDeFi拡大", s:38, d:"up", status:"7/20統合完了・EVM/Cosmos含む80超のチェーンに接続", desc:"XRPレジャーおよびXRPL EVMサイドチェーンが7/20、Axelarのインターチェーン・トークン・サービスと連携を開始。XRPおよびXRPLネイティブ資産がAxelarの相互運用スタックを通じてEVM・Cosmos等80超のブロックチェーン上のDeFiアプリケーションと接続可能になり、ステーブルコインや大口資産向けの流動性拡大にも寄与すると期待される(Bitcoinist、Axelar Network、7/20-21)。"},
+    {date:"2026-07-18", tier:"warn", t:"DTCC担保フレームワークにおけるXRPのヘアカット表示", s:35, d:"down", status:"複数メディアが追随報道も真偽不明(7/18時点)", desc:"DTCCラーニングセンターの検索結果に、XRPが$5以下ではほぼ全額ヘアカット・$5超で35%ヘアカットまたはVaR方式になるとの表示が出たと拡散。Times Tabloid以外にdmarketforces・coin-turk等も同様の報道を伝えているが、XRPLの研究者からはAI生成の検索結果であり公式な規則文書ではないとの指摘もあり、真偽・法的位置付けは依然未確定。"},
+    {date:"2026-07-25", tier:"good", t:"RWAトークン化の拡大(Evernorth等)", s:52, d:"up", status:"XRPレジャーが直近6ヶ月でRWA新規流入$26億を記録しBNB Chainに次ぐ2位に(The Crypto Basic、7/25)", desc:"RWA.xyzのデータによると、XRPレジャーは直近6ヶ月間でステーブルコインを除くRWA(現実資産トークン化)の新規流入額$26億を記録し、BNB Chainの$30億に次ぐ2位に浮上、3位のStellarの$21億を上回った(The Crypto Basic、crypto.news、7/25)。XRPL上のRWA総額は$40億超に拡大、トークン化エネルギー資産(JMWHが$22.3億)が最大のカテゴリーとなっている。The Crypto Basicは7/24にも、XRP関連インフラ上のRWAが2026年累計で$8億相当に到達、資産担保クレジットも約$10億相当と前年通期を上回るペースと報じており、決済レールとしての実需拡大が続く。XRP treasury企業Evernorthは、Armada Acquisition Corp IIとのSPAC合併によるNasdaq上場(ティッカーXRPN)・$10億規模のXRPトレジャリー戦略を進めており、SBIホールディングス($2億コミット)を筆頭にRipple・Pantera Capital・Krakenが出資、日本語版X公式アカウントも開設し日本市場を重点開拓中(Coinspeaker)。ただしSEC登録届出は依然未発効でNasdaq上場時期は未確定(7/28時点)。"},
+    {date:"2025-12-01", tier:"good", t:"Rippleの信託銀行免許(OCC認可)", s:50, d:"up", status:"確定済 2025/12", desc:"RLUSD準備金のカストディが可能に。機関投資家のコンプライアンス障壁が低下。"},
+    {date:"2026-08-16", tier:"good", t:"欧州MiCAライセンス / ISO 20022・SWIFT連携", s:44, d:"up", status:"24/7 Wall Streetは8/16、Rippleがドイツ銀行・JPモルガン・マスターカードとの提携でクロスボーダー決済網を拡大し、EUでMiCA CASPライセンス・EMI(電子マネー機関)ライセンスを完全取得したと改めて報道、それでもXRP価格への直接的な反応は限定的と伝えた(247wallst.com、8/16)。Benzingaは8/11、ルクセンブルクCSSFのフルMiCA CASPライセンス取得(EEA30カ国展開可能・グローバル規制ライセンス75件超)を報道も、XRPはほぼ無反応と伝えた(benzinga.com、8/11)", desc:"Benzingaは8/11、RippleがルクセンブルクCSSFから完全なMiCA CASPライセンスを取得しEEA30カ国でのパスポート展開が可能になった一方、XRPはこの規制面の好材料にほぼ無反応(小幅安)にとどまったと報道、MiCA認可はサービス提供会社への認可でありXRPトークン自体への当局承認ではなく、決済取扱高の実際の増加という次の証拠を市場が待っていると分析した(benzinga.com、8/11)。ルクセンブルクCSSFがRippleに完全なMiCA CASPライセンスを付与し、EEA30カ国でパスポート展開が可能に(発表直後の値動きは限定的、過去の予備承認時は逆に3%下落した例も)。SWIFTは2025/11に移行完了、Ripple Payments製品はSWIFTメッセージング相互運用性のサポートも明記(技術仕様上の対応で正式な商業提携ではない点に注意)。"},
+    {date:"", tier:"good", t:"XRP Tokyo 2026 / アジア圏機関連携", s:45, d:"up", status:"進行中", desc:"SBIが日本でRLUSD展開、大阪デジタル取引所で債券発行。年間$33兆規模の決済高予測を提示。"},
+    {date:"2026-03-31", tier:"good", t:"SEC訴訟の完全決着", s:40, d:"up", status:"確定済 2026 Q1", desc:"控訴取り下げ、罰金$50M程度に圧縮。好材料だがすでに相当程度織り込み済み。"},
+    {date:"", tier:"warn", t:"Garlinghouse発言トーン", s:25, d:"down", status:"進行中", desc:"「自分はXRPマキシではない」発言で軽微な反応。6月は「実需こそ長期的価値」と軌道修正。"},
   ];
 
+  // ---- traffic-light rating + freshness helpers ----
+  // tier は各データに明示されるが、欠落時は方向(d)と影響度(s)から導出する。
+  // 緑=追い風 / 黄=逆風だが影響度は中程度以下 / 赤=影響度の大きい逆風。
+  const TIER_META = {
+    good: { label: '追い風', mark: '●', rank: 0 },
+    warn: { label: '要警戒', mark: '●', rank: 1 },
+    bad:  { label: '逆風',   mark: '●', rank: 2 },
+  };
+  function deriveTier(it){
+    if (it && TIER_META[it.tier]) return it.tier;
+    if (!it || it.d === 'up') return 'good';
+    return (Number(it.s) || 0) >= 60 ? 'bad' : 'warn';
+  }
+  function tierFromScore(score){ return score >= 70 ? 'good' : (score >= 55 ? 'warn' : 'bad'); }
+  const SENTIMENT_TIER = { up: 'good', neutral: 'warn', down: 'bad' };
+
+  const TODAY = new Date();
+  function parseDate(s){
+    if (!s) return null;
+    const d = new Date(String(s).trim().replace(/\//g, '-') + 'T00:00:00');
+    return isNaN(d) ? null : d;
+  }
+  function daysAgo(s){
+    const d = parseDate(s);
+    if (!d) return null;
+    return Math.floor((TODAY - d) / 86400000);
+  }
+  function freshChip(dateStr){
+    const n = daysAgo(dateStr);
+    if (n === null) return `<span class="fresh-chip">常設</span>`;
+    const label = n <= 0 ? '本日' : (n === 1 ? '昨日' : `${n}日前`);
+    const isNew = n <= 3;
+    return `<span class="fresh-chip${isNew ? ' is-new' : ''}">${isNew ? 'NEW ' : ''}${dateStr.slice(5)} ・ ${label}</span>`;
+  }
+  // 鮮度降順。日付なし(常設)は末尾へ。
+  function byFreshness(a, b){
+    const da = parseDate(a.date), db = parseDate(b.date);
+    if (da && db) return db - da;
+    if (da) return -1;
+    if (db) return 1;
+    return 0;
+  }
+  function byTier(a, b){
+    const r = TIER_META[deriveTier(a)].rank - TIER_META[deriveTier(b)].rank;
+    return r !== 0 ? r : byFreshness(a, b);
+  }
+  // 長文は指定行数でクランプし、トグルで全文表示にする(スクロール量の削減)
+  function clampify(root){
+    root.querySelectorAll('.clamp').forEach(el=>{
+      if (el.querySelector('.clamp-btn')) return; // 既に配線済み
+      const body = el.querySelector('.clamp-body');
+      if (!body) return;
+      // 実際に溢れている時だけボタンを出す(非表示タブでは0のため、タブ表示時に再実行する)
+      if (body.scrollHeight - body.clientHeight < 4) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'clamp-btn';
+      btn.textContent = '続きを読む';
+      btn.addEventListener('click', ()=>{
+        const open = el.classList.toggle('is-open');
+        btn.textContent = open ? '折りたたむ' : '続きを読む';
+      });
+      el.appendChild(btn);
+    });
+  }
+
   const grid = document.getElementById('impactGrid');
-  impacts.forEach(it=>{
+  function renderImpacts(mode){
+    grid.innerHTML = '';
+    const sorted = [...impacts].sort(mode === 'tier' ? byTier : byFreshness);
+    sorted.forEach(it=> buildImpactCard(it));
+    clampify(grid);
+  }
+  function buildImpactCard(it){
+    const tier = deriveTier(it);
     const card = document.createElement('div');
-    card.className = 'impact-card';
+    card.className = 'impact-card tl-edge ' + tier;
     const ringEl = document.createElement('div');
     ringEl.className = 'ring-wrap';
     card.appendChild(ringEl);
     const body = document.createElement('div');
     body.className = 'impact-body';
     body.innerHTML = `
+      <div class="impact-head">
+        ${freshChip(it.date)}
+        <span class="tl-chip ${tier}">${TIER_META[tier].mark} ${TIER_META[tier].label}</span>
+        <span class="pill ${it.d}">${it.d==='up' ? '▲ 強気' : '▼ 弱気'}</span>
+      </div>
       <p class="impact-title">${it.t}</p>
       <div class="impact-tags">
-        <span class="pill ${it.d}">${it.d==='up' ? '▲ 強気' : '▼ 弱気'}</span>
         <span class="pill status">${it.status}</span>
       </div>
-      <p class="impact-desc">${it.desc}</p>
+      <div class="clamp" style="--lines:3"><p class="impact-desc clamp-body">${it.desc}</p></div>
     `;
     card.appendChild(body);
     grid.appendChild(card);
-    ring(ringEl, it.s, it.d, 64, 6, '', 'SCORE');
+    ring(ringEl, it.s, tier, 64, 6, '', 'SCORE');
+  }
+  renderImpacts('fresh');
+  document.getElementById('impactSort').addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-sort]');
+    if (!btn) return;
+    document.querySelectorAll('#impactSort button').forEach(b=> b.setAttribute('aria-pressed', String(b === btn)));
+    renderImpacts(btn.dataset.sort);
   });
 
   const news = [
@@ -741,23 +963,26 @@
   document.getElementById('newsCount').textContent = news.length;
   const sentimentMeta = { up: {label:"強気", cls:"up"}, neutral: {label:"中立", cls:"neutral"}, down: {label:"弱気", cls:"down"} };
   const newsList = document.getElementById('newsList');
-  news.forEach(n=>{
+  const newsSorted = [...news].sort(byFreshness); // 新しい順を保証する(元配列の並びは不定)
+  newsSorted.forEach(n=>{
     const item = document.createElement('a');
-    item.className = 'news-item';
+    const tier = SENTIMENT_TIER[n.sentiment] || 'warn';
+    item.className = 'news-item tl-edge ' + tier;
     item.href = n.link;
     item.target = '_blank';
     item.rel = 'noopener';
     const sm = sentimentMeta[n.sentiment];
     item.innerHTML = `
       <div>
-        <div class="news-meta">${n.date}<span class="src">${n.src}</span><span class="pill ${sm.cls}">${sm.label}</span></div>
+        <div class="news-meta">${freshChip(n.date)}<span class="src">${n.src}</span><span class="tl-chip ${tier}">${sm.label}</span></div>
         <blockquote class="news-quote">${n.quote}</blockquote>
-        <p class="news-note">${n.note}</p>
+        <div class="clamp" style="--lines:2"><p class="news-note clamp-body">${n.note}</p></div>
       </div>
       <div class="news-arrow">↗</div>
     `;
     newsList.appendChild(item);
   });
+  clampify(newsList);
 
   // sentiment breakdown bar chart
   const counts = { up: 0, neutral: 0, down: 0 };
@@ -788,14 +1013,14 @@
       <td class="num tnum" data-cgid="${c.cgid}" data-field="price">${c.price}</td>
       <td>${c.usecase}</td>
       <td>${c.reg}</td>
-      <td>${c.etf}</td>
-      <td><div class="score-cell"><span class="ring-wrap mini-ring" data-score="${c.score}"></span><b class="tnum mono">${c.score}</b></div></td>
+      <td><div class="cell-clamp">${c.etf}</div></td>
+      <td><div class="score-cell"><span class="ring-wrap mini-ring" data-score="${c.score}"></span><b class="tnum mono">${c.score}</b><span class="tl-chip ${tierFromScore(c.score)}">●</span></div></td>
       <td class="num tnum">${c.target}</td>
     `;
     compareBody.appendChild(tr);
   });
   document.querySelectorAll('.mini-ring').forEach(el=>{
-    ring(el, Number(el.dataset.score), 'up', 40, 5, '', '');
+    ring(el, Number(el.dataset.score), tierFromScore(Number(el.dataset.score)), 40, 5, '', '');
   });
 
   // ranking bar chart (future potential score)
@@ -803,7 +1028,7 @@
   [...cryptos].sort((a,b)=> b.score - a.score).forEach(c=>{
     const row = document.createElement('div');
     row.className = 'rank-row' + (c.xrp ? ' is-xrp' : '');
-    row.innerHTML = `<span class="name">${c.ticker}</span><span class="track"><span class="fill" style="width:${c.score}%"></span></span><span class="val tnum">${c.score}</span>`;
+    row.innerHTML = `<span class="name">${c.ticker}</span><span class="track"><span class="fill ${tierFromScore(c.score)}" style="width:${c.score}%"></span></span><span class="val tnum">${c.score}</span>`;
     rankList.appendChild(row);
   });
 
@@ -1103,6 +1328,160 @@
     track.innerHTML = build + build;
   }
   renderTicker();
+
+  // ---- collapse the long static prose (content is kept in full, just folded) ----
+  function wrapClamp(el, lines){
+    if (!el || el.closest('.clamp')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'clamp';
+    wrap.style.setProperty('--lines', lines);
+    el.parentNode.insertBefore(wrap, el);
+    wrap.appendChild(el);
+    el.classList.add('clamp-body');
+  }
+  // カード全体を1つにまとめて畳む(トグルがカードごとに1つで済む)
+  function wrapClampGroup(container, nodes, maxh){
+    if (!nodes.length) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'clamp h-clamp';
+    wrap.style.setProperty('--maxh', maxh + 'px');
+    const body = document.createElement('div');
+    body.className = 'clamp-body';
+    container.insertBefore(wrap, nodes[0]);
+    nodes.forEach(n=> body.appendChild(n));
+    wrap.appendChild(body);
+  }
+  wrapClamp(document.querySelector('.hero-sub'), 3);
+  document.querySelectorAll('.stat .d').forEach(el=> wrapClamp(el, 3));
+  document.querySelectorAll('.sec-lede').forEach(el=> wrapClamp(el, 3));
+  document.querySelectorAll('.versus-col dd').forEach(el=> wrapClamp(el, 3));
+  document.querySelectorAll('.moonshot-note').forEach(el=> wrapClamp(el, 3));
+
+  // ---- traffic-light on the weekly action cards ----
+  // 総合スタンスは鮮度で重み付けする(古い構造的材料が直近の急変を打ち消さないように)
+  function recencyWeight(dateStr){
+    const n = daysAgo(dateStr);
+    if (n === null) return 0.2;      // 常設・進行中
+    if (n <= 7) return 1;
+    if (n <= 30) return 0.5;
+    return 0.2;
+  }
+  let goodWeight = 0, badWeight = 0;
+  const tierCounts = { good: 0, warn: 0, bad: 0 };
+  impacts.forEach(it=>{
+    const t = deriveTier(it);
+    tierCounts[t]++;
+    const w = it.s * recencyWeight(it.date);
+    if (t === 'good') goodWeight += w;
+    else if (t === 'bad') badWeight += w;
+    else badWeight += w * 0.5;
+  });
+  const overallTier = badWeight > goodWeight * 1.15 ? 'bad' : (goodWeight > badWeight * 1.15 ? 'good' : 'warn');
+  // 1枚目=総合スタンス(自動判定) / 2枚目=買い候補ゾーン / 3枚目=警戒ライン / 4枚目=重要イベント
+  const actionTiers = [overallTier, 'good', 'bad', 'warn'];
+  document.querySelectorAll('.action-grid .action-card').forEach((card, i)=>{
+    const t = actionTiers[i] || 'warn';
+    card.classList.add('tl-edge', t);
+    wrapClampGroup(card, [...card.children], 250);
+    const chip = document.createElement('span');
+    chip.className = 'tl-chip ' + t;
+    chip.textContent = i === 0
+      ? `${TIER_META[t].mark} 総合スタンス: ${TIER_META[t].label}`
+      : `${TIER_META[t].mark} ${TIER_META[t].label}`;
+    card.insertBefore(chip, card.firstChild);
+  });
+
+  // ---- traffic-light on the technical / fundamental columns ----
+  const techItem = impacts.find(it=> /^テクニカル/.test(it.t));
+  const techTier = techItem ? deriveTier(techItem) : 'warn';
+  let fGood = 0, fBad = 0;
+  impacts.filter(it=> it !== techItem).forEach(it=>{
+    const t = deriveTier(it);
+    if (t === 'good') fGood += it.s; else if (t === 'bad') fBad += it.s; else fBad += it.s * 0.5;
+  });
+  const fundTier = fBad > fGood * 1.15 ? 'bad' : (fGood > fBad * 1.15 ? 'good' : 'warn');
+  [techTier, fundTier].forEach((t, i)=>{
+    const col = document.querySelectorAll('.versus .versus-col')[i];
+    if (!col) return;
+    col.classList.add('tl-edge', t);
+    const chip = document.createElement('span');
+    chip.className = 'tl-chip ' + t;
+    chip.textContent = `${TIER_META[t].mark} ${TIER_META[t].label}`;
+    const h = col.querySelector('.vh');
+    if (h) h.insertBefore(chip, h.querySelector('.score'));
+  });
+
+  // ---- overview summary panel: freshest first, colour-ranked ----
+  document.getElementById('tlScale').innerHTML = [['good','追い風'],['warn','要警戒'],['bad','逆風']]
+    .map(([k,l])=>`<span class="seg"><i class="sw ${k}"></i>${l}<b class="tnum">${tierCounts[k]}</b></span>`).join('');
+  document.getElementById('summaryGrid').innerHTML = [...impacts].sort(byFreshness).slice(0, 3).map(it=>{
+    const t = deriveTier(it);
+    return `<div class="summary-cell tl-edge ${t}">
+      <div class="meta">${freshChip(it.date)}<span class="tl-chip ${t}">${TIER_META[t].mark} ${TIER_META[t].label}</span><span class="fresh-chip">影響度 ${it.s}</span></div>
+      <p class="ttl">${it.t}</p>
+      <p class="sub">${it.status}</p>
+    </div>`;
+  }).join('');
+  document.getElementById('summaryPanel').hidden = false;
+
+  // ---- tabs: only one section is in the flow at a time (scroll minimisation) ----
+  const newCount = arr => arr.filter(x => { const n = daysAgo(x.date); return n !== null && n <= 3; }).length;
+  const TABS = [
+    { id:'overview', label:'要点',       badge:`<span class="tab-dots"><i class="${overallTier}"></i></span>` },
+    { id:'action',   label:'アクション' },
+    { id:'impact',   label:'インパクト', badge: newCount(impacts) ? `<span class="tab-count">NEW ${newCount(impacts)}</span>` : '' },
+    { id:'analysis', label:'分析' },
+    { id:'compare',  label:'比較' },
+    { id:'news',     label:'ニュース',   badge: newCount(news) ? `<span class="tab-count">NEW ${newCount(news)}</span>` : '' },
+    { id:'strategy', label:'戦略' },
+    { id:'moonshot', label:'20倍条件' },
+    { id:'tips',     label:'提言' },
+  ];
+  const tabNav = document.getElementById('tabNav');
+  const panels = new Map();
+  TABS.forEach(t=>{
+    const sec = document.getElementById(t.id);
+    if (!sec) return;
+    sec.classList.add('is-panel');
+    sec.setAttribute('role', 'tabpanel');
+    sec.setAttribute('aria-label', t.label);
+    panels.set(t.id, sec);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', 'false');
+    btn.dataset.tab = t.id;
+    btn.innerHTML = `<span>${t.label}</span>${t.badge || ''}`;
+    tabNav.appendChild(btn);
+  });
+
+  function activate(id, fromUser){
+    if (!panels.has(id)) id = TABS[0].id;
+    panels.forEach((sec, key)=>{ sec.hidden = key !== id; });
+    tabNav.querySelectorAll('button').forEach(b=> b.setAttribute('aria-selected', String(b.dataset.tab === id)));
+    const sec = panels.get(id);
+    clampify(sec);   // 非表示中は溢れ判定ができないので、表示時に配線する
+    redrawCharts();
+    try { history.replaceState(null, '', '#' + id); } catch (e) { /* file:// では失敗しうる */ }
+    if (fromUser) window.scrollTo(0, 0);
+  }
+  tabNav.addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-tab]');
+    if (btn) activate(btn.dataset.tab, true);
+  });
+  tabNav.addEventListener('keydown', e=>{
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const btns = [...tabNav.querySelectorAll('button')];
+    const i = btns.findIndex(b=> b.getAttribute('aria-selected') === 'true');
+    const next = btns[(i + (e.key === 'ArrowRight' ? 1 : btns.length - 1)) % btns.length];
+    e.preventDefault();
+    next.focus();
+    activate(next.dataset.tab, true);
+  });
+  window.addEventListener('hashchange', ()=> activate(location.hash.slice(1), false));
+  activate(location.hash.slice(1) || 'overview', false);
+  // #impact 等のリンクで開いた時、ブラウザ既定のハッシュ移動でヘッダーが隠れるのを戻す
+  requestAnimationFrame(()=> window.scrollTo(0, 0));
 
   // ---- live data refresh (works on the deployed GitHub Pages site; blocked by the Artifact preview's sandbox) ----
   function fmtCap(usd){
