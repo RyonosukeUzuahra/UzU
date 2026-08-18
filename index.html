@@ -109,17 +109,31 @@
   .ticker-track {
     display: inline-block;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 12.5px;
     letter-spacing: 0.03em;
     padding: 7px 0;
-    animation: scroll-left 32s linear infinite;
+    will-change: transform;
+    /* 所要時間は内容の長さから JS が算出する(速度を一定に保つため)。
+       ここの値は JS が動かない場合のフォールバック。 */
+    animation: scroll-left var(--ticker-duration, 600s) linear infinite;
   }
   @keyframes scroll-left {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
   }
+  /* 読みたい行で止められるように */
+  .ticker:hover .ticker-track, .ticker:focus-within .ticker-track { animation-play-state: paused; }
   .ticker-track span { padding: 0 28px; opacity: 0.92; }
   .ticker-track span.hi { opacity: 1; font-weight: 700; }
+  .ticker-hint {
+    position: absolute; right: 0; top: 0; z-index: 2;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.03em;
+    background: var(--border-strong); color: var(--bg); opacity: 0.75;
+    padding: 7px 12px 7px 44px; pointer-events: none;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 40px);
+    mask-image: linear-gradient(to right, transparent, #000 40px);
+  }
+  @media (max-width: 620px) { .ticker-hint { display: none; } }
 
   /* ---------- tab nav ---------- */
   .quicknav-bar { position: sticky; top: 33px; z-index: 40; background: var(--bg); border-bottom: 1px solid var(--border); }
@@ -217,6 +231,24 @@
   .impact-card { align-items: flex-start; }
   .impact-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 6px; }
   .action-card > .tl-chip { display: inline-block; margin-bottom: 10px; }
+
+  /* ---------- holdings / position plan ---------- */
+  .pos-note { font-family: var(--mono); font-size: 11px; color: var(--text-faint); margin: 0 0 18px; }
+  .ladder-wrap { overflow-x: auto; border: 1px solid var(--border); margin-bottom: 26px; }
+  table.ladder { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 720px; }
+  .ladder th, .ladder td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .ladder thead th { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em; color: var(--text-faint); background: var(--bg-sunken); }
+  .ladder tbody tr:last-child td { border-bottom: none; }
+  .ladder td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+  .ladder tr.is-core td { background: var(--bg-sunken); }
+  .ladder tr.is-core td:first-child { font-weight: 700; }
+  .ladder .mult { font-family: var(--mono); font-size: 11.5px; color: var(--text-faint); margin-left: 6px; }
+  .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 26px; }
+  .plan-card { background: var(--bg-elevated); padding: 18px 20px; }
+  .plan-card .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; color: var(--text-muted); margin: 10px 0 8px; }
+  .plan-card .big { font-family: var(--mono); font-weight: 800; font-size: 19px; margin-bottom: 8px; }
+  .plan-card p { font-size: 13.5px; color: var(--text-muted); margin: 0; }
+  @media (max-width: 880px) { .plan-grid { grid-template-columns: 1fr; } }
   .sort-toggle { display: flex; gap: 0; border: 1px solid var(--border); }
   .sort-toggle button {
     font-family: var(--mono); font-size: 11px; padding: 4px 11px; background: var(--bg-elevated);
@@ -508,6 +540,7 @@
 
 <div class="ticker">
   <div class="ticker-track" id="tickerTrack"></div>
+  <div class="ticker-hint">ホバーで停止</div>
 </div>
 
 <div class="quicknav-bar">
@@ -581,6 +614,30 @@
         <p class="chart-note">2026年6月〜8月17日(20:00 JST)に報じられた高値・安値・現在値を基に作成した模式図。日次OHLCの実データではない。</p>
       </div>
     </div>
+  </section>
+
+  <section id="holdings">
+    <div class="sec-head">
+      <h2>00 ／ 保有ポジションと売買指針</h2>
+      <div class="tag" id="holdingsTag">POSITION PLAN</div>
+    </div>
+    <p class="sec-lede">保有中の XRP を、このダッシュボードの目標($21.00)に対してどう運用するかの計画。到達価格ごとに売る比率をあらかじめ決めておき、値動きの最中に判断しないで済むようにする。数量・価格は目安であり、注文の執行判断は常に自分で行うこと。</p>
+    <div class="stat-row" id="posStats" style="margin-top:0"></div>
+    <p class="pos-note" id="posNote"></p>
+    <h3 style="font-size:15px;margin:0 0 12px">段階的利確ラダー</h3>
+    <div class="ladder-wrap">
+      <table class="ladder" id="ladderTable">
+        <thead>
+          <tr>
+            <th>到達価格</th><th>売却比率</th><th>売却数量</th><th>概算受取額</th><th>累計受取額</th><th>残数量</th><th>方針</th>
+          </tr>
+        </thead>
+        <tbody id="ladderBody"></tbody>
+      </table>
+    </div>
+    <h3 style="font-size:15px;margin:0 0 12px">当面の売買指針</h3>
+    <div class="plan-grid" id="planGrid"></div>
+    <p class="moonshot-note" id="planNote"></p>
   </section>
 
   <section id="action">
@@ -1323,12 +1380,135 @@
     "ビットコインは$62,300〜$64,000のレンジで推移(時価総額約$1.26兆〜$1.33兆)、イーサリアムは$1,874〜$1,900近辺(時価総額約$2,270億)、ソラナは$75〜$76前後(時価総額約$440億)、ステラ(XLM)は$0.1585近辺(時価総額約$54.7億・ランク#16)で推移(fxstreet.com、coinmarketcap.com調べ、8/16-8/17時点)",
     "Yahoo Financeは8/17、ビットコインが月曜寄り付き$62,829.64(前日比-0.3%)で始まり午前9時17分(ET)時点で$63,413.32まで持ち直し、イーサリアムも寄り付き$1,874.10(前日比-0.4%)から同時刻$1,894.98へ回復したと報道、アナリストの間で弱気相場の底打ち時期を巡る見方が割れていると伝えた(finance.yahoo.com、8/17)",
   ];
+  // 読める速さ(px/秒)。項目数が増減しても体感速度が変わらないよう、
+  // 実測した1周分の幅から所要時間を割り出す。
+  const TICKER_SPEED_PX_PER_SEC = 55;
+  function syncTickerSpeed(){
+    const track = document.getElementById('tickerTrack');
+    if (!track) return;
+    const half = track.scrollWidth / 2;   // 同じ内容を2回並べているので半分が1周ぶん
+    if (!half) return;
+    const seconds = Math.max(60, Math.round(half / TICKER_SPEED_PX_PER_SEC));
+    track.style.setProperty('--ticker-duration', seconds + 's');
+  }
   function renderTicker(){
     const track = document.getElementById('tickerTrack');
     const build = tickerItems.map((t,i)=>`<span${i===0?' class="hi"':''}>${t}</span>`).join('');
     track.innerHTML = build + build;
+    syncTickerSpeed();
   }
   renderTicker();
+  window.addEventListener('resize', debounce(syncTickerSpeed, 200));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncTickerSpeed);
+
+  // ---- holdings / position plan ----
+  // 保有数量と計画。数量はユーザー申告値。buyZone / stopLine / ladder の note は
+  // 日次更新で入れ替わりうるが、xrp と avgCost はユーザーの指示なしに変更しないこと。
+  const HOLDINGS = {
+    xrp: 4013,
+    avgCost: null,           // 取得単価(USD)。入れると含み損益も表示される
+    target: 21.00,           // 本ダッシュボードの目標価格
+    buyZone:  { lo: 0.90, hi: 1.00 },
+    stopLine: { px: 0.80 },
+    ladder: [
+      { px: 2.00,  pct: 10, note: "最初の利確。投下資金の一部を回収し、以降を「勝ち逃げできる持ち高」に変える" },
+      { px: 5.00,  pct: 15, note: "2030年コンセンサス($5〜15)の下限。ここまでは到達確度が相対的に高い" },
+      { px: 10.00, pct: 20, note: "コンセンサス中央。ここで累計半分近くを現金化し、残りを完全なアップサイド狙いに" },
+      { px: 15.00, pct: 20, note: "コンセンサス上限。強気シナリオが現実化した局面" },
+      { px: 21.00, pct: 25, note: "目標の20倍。テールイベントであり、届いた時点で機械的に執行する" },
+    ],
+    coreNote: "残り10%は「売らないコア」。20倍未達でも部分的成功として評価する設計",
+  };
+
+  function fmtUsd(n){
+    if (n >= 1000) return '$' + Math.round(n).toLocaleString('en-US');
+    return '$' + n.toFixed(2);
+  }
+  function fmtXrp(n){ return Math.round(n).toLocaleString('en-US') + ' XRP'; }
+  // 受取額は概算なのでドル未満は丸めて桁を揃える
+  function fmtAmt(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+  function currentPx(){
+    if (liveData.xrp && liveData.xrp.price) return liveData.xrp.price;
+    const el = document.getElementById('statCurrentPrice');
+    const v = el ? parseFloat(el.textContent.replace(/[^0-9.]/g, '')) : NaN;
+    return isNaN(v) || !v ? 1.00 : v;   // 日次更新のheroの値を自動で拾う
+  }
+
+  function renderHoldings(){
+    const H = HOLDINGS, px = currentPx();
+    const value = H.xrp * px, atTarget = H.xrp * H.target;
+
+    const stats = [
+      ['保有数量', fmtXrp(H.xrp), 'ユーザー申告'],
+      ['現在評価額', fmtAmt(value), `@ ${fmtUsd(px)} ・ 1 XRP あたり`],
+      ['目標到達時', fmtAmt(atTarget), `@ ${fmtUsd(H.target)} ・ 現在比 ${(H.target / px).toFixed(1)}倍`],
+    ];
+    if (H.avgCost) {
+      const cost = H.xrp * H.avgCost, pl = value - cost;
+      const t = pl >= 0 ? 'good' : 'bad';
+      stats.push(['含み損益', (pl >= 0 ? '+' : '-') + fmtAmt(Math.abs(pl)),
+        `取得 ${fmtUsd(H.avgCost)} ・ ${(pl / cost * 100).toFixed(1)}%`, t]);
+    }
+    document.getElementById('posStats').innerHTML = stats.map(([k, v, d, t])=>
+      `<div class="stat${t ? ' tl-edge ' + t : ''}"><div class="k">${k}</div><div class="v tnum">${v}</div><div class="d">${d}</div></div>`
+    ).join('');
+    document.getElementById('posNote').textContent = H.avgCost
+      ? `評価額は現在値 ${fmtUsd(px)} で計算。`
+      : `評価額は現在値 ${fmtUsd(px)} で計算。取得単価が未設定のため含み損益は表示していない。`;
+
+    let sold = 0, proceeds = 0;
+    const rows = H.ladder.map(step=>{
+      const qty = H.xrp * step.pct / 100;
+      const amt = qty * step.px;
+      sold += qty; proceeds += amt;
+      return `<tr>
+        <td><b class="mono tnum">${fmtUsd(step.px)}</b><span class="mult">${(step.px / px).toFixed(1)}x</span></td>
+        <td class="num">${step.pct}%</td>
+        <td class="num">${fmtXrp(qty)}</td>
+        <td class="num">${fmtAmt(amt)}</td>
+        <td class="num">${fmtAmt(proceeds)}</td>
+        <td class="num">${fmtXrp(H.xrp - sold)}</td>
+        <td style="white-space:normal">${step.note}</td>
+      </tr>`;
+    });
+    const corePct = 100 - H.ladder.reduce((a, b)=> a + b.pct, 0);
+    rows.push(`<tr class="is-core">
+      <td>コア保有</td><td class="num">${corePct}%</td><td class="num">${fmtXrp(H.xrp * corePct / 100)}</td>
+      <td class="num">―</td><td class="num">―</td><td class="num">${fmtXrp(H.xrp * corePct / 100)}</td>
+      <td style="white-space:normal">${H.coreNote}</td>
+    </tr>`);
+    document.getElementById('ladderBody').innerHTML = rows.join('');
+
+    const inBuyZone = px >= H.buyZone.lo && px <= H.buyZone.hi;
+    // 表示は$1.00でも実値が$1.002ということがあるので、上限のすぐ上は「圏内扱い」で伝える
+    const nearZone = !inBuyZone && px > H.buyZone.hi && px <= H.buyZone.hi * 1.03;
+    const zoneMsg = inBuyZone ? 'このゾーン内。'
+      : nearZone ? 'ゾーン上限のすぐ上で、実質的に射程内。'
+      : px > H.buyZone.hi ? 'ゾーンより上。待つ局面。'
+      : 'ゾーンを下抜けている。下限割れでの追撃は見送る。';
+    const belowStop = px < H.stopLine.px;
+    const plans = [
+      { tier: 'good', cap: '買い増しゾーン', big: `${fmtUsd(H.buyZone.lo)} 〜 ${fmtUsd(H.buyZone.hi)}`,
+        p: `現在値 ${fmtUsd(px)} は${zoneMsg}分割指値のみで拾い、下限割れでの追撃はしない。サテライト枠の範囲内に収めること。` },
+      { tier: 'bad', cap: '撤退ライン', big: `${fmtUsd(H.stopLine.px)} 割れ`,
+        p: `日足終値でこの水準を割り込んだら、20倍シナリオの前提が崩れたものとして計画を見直す。現在値 ${fmtUsd(px)} は${belowStop ? 'すでに下回っている。' : 'まだ上。'}` },
+      { tier: 'warn', cap: '次の利確ライン', big: fmtUsd(H.ladder[0].px),
+        p: `${fmtUsd(H.ladder[0].px)} 到達で ${H.ladder[0].pct}%(${fmtXrp(H.xrp * H.ladder[0].pct / 100)})を売却。到達前に比率を動かさないことが、この計画の唯一のルール。` },
+    ];
+    document.getElementById('planGrid').innerHTML = plans.map(x=>
+      `<div class="plan-card tl-edge ${x.tier}"><span class="tl-chip ${x.tier}">${TIER_META[x.tier].mark} ${TIER_META[x.tier].label}</span>
+       <div class="cap">${x.cap}</div><div class="big tnum">${x.big}</div><p>${x.p}</p></div>`
+    ).join('');
+
+    document.getElementById('planNote').innerHTML =
+      `<strong style="color:var(--text)">この計画の考え方: </strong>` +
+      `${fmtXrp(H.xrp)}という数量は、20倍が実現すれば ${fmtAmt(atTarget)}、` +
+      `コンセンサス圏の$5〜15なら ${fmtAmt(H.xrp * 5)}〜${fmtAmt(H.xrp * 15)} に相当する。` +
+      `20倍は全条件が同時成立した場合のテールイベントであり、上のラダーは「$5〜15圏で止まっても計画として成立する」ように前半に厚く配分してある。` +
+      `逆に言えば、${fmtUsd(H.ladder[0].px)}・${fmtUsd(H.ladder[1].px)}での利確を飛ばして20倍だけを待つ設計にはしていない。` +
+      `比率は価格が動いてから決めるのではなく、到達前に決めておくこと。本セクションは投資助言ではなく、判断と執行は自己責任で行うこと。`;
+  }
+  renderHoldings();
 
   // ---- collapse the long static prose (content is kept in full, just folded) ----
   function wrapClamp(el, lines){
@@ -1429,6 +1609,7 @@
   const newCount = arr => arr.filter(x => { const n = daysAgo(x.date); return n !== null && n <= 3; }).length;
   const TABS = [
     { id:'overview', label:'要点',       badge:`<span class="tab-dots"><i class="${overallTier}"></i></span>` },
+    { id:'holdings', label:'保有' },
     { id:'action',   label:'アクション' },
     { id:'impact',   label:'インパクト', badge: newCount(impacts) ? `<span class="tab-count">NEW ${newCount(impacts)}</span>` : '' },
     { id:'analysis', label:'分析' },
@@ -1518,6 +1699,7 @@
       if (cell.dataset.field === 'price') cell.textContent = fmtPrice(v.price);
     });
     renderTicker();
+    renderHoldings();
     redrawCharts();
   }
 
