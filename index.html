@@ -621,7 +621,7 @@
       <h2>00 ／ 保有ポジションと売買指針</h2>
       <div class="tag" id="holdingsTag">POSITION PLAN</div>
     </div>
-    <p class="sec-lede">保有中の XRP を、このダッシュボードの目標($21.00)に対してどう運用するかの計画。到達価格ごとに売る比率をあらかじめ決めておき、値動きの最中に判断しないで済むようにする。数量・価格は目安であり、注文の執行判断は常に自分で行うこと。</p>
+    <p class="sec-lede">保有中の XRP を、このダッシュボードの目標($21.00)に対してどう運用するかの計画。目標「$21で全量売却 = $84,273」を満たすため、加重平均売却価格が$21ちょうどになるよう$21を中心に対称配分してある。到達価格ごとに売る比率をあらかじめ決めておき、値動きの最中に判断しないで済むようにする。数量・価格は目安であり、注文の執行判断は常に自分で行うこと。</p>
     <div class="stat-row" id="posStats" style="margin-top:0"></div>
     <p class="pos-note" id="posNote"></p>
     <h3 style="font-size:15px;margin:0 0 12px">段階的利確ラダー</h3>
@@ -1410,14 +1410,16 @@
     target: 21.00,           // 本ダッシュボードの目標価格
     buyZone:  { lo: 0.90, hi: 1.00 },
     stopLine: { px: 0.80 },
+    // 目標「$21で全量売却=$84,273」を満たすため、加重平均売却価格が
+    // ちょうど $21.00 になるよう $21 を中心に対称配分している。
+    // 合計比率は必ず100%(=全量売却)、Σ(px×pct)/100 は必ず 21.00 に保つこと。
     ladder: [
-      { px: 2.00,  pct: 10, note: "最初の利確。投下資金の一部を回収し、以降を「勝ち逃げできる持ち高」に変える" },
-      { px: 5.00,  pct: 15, note: "2030年コンセンサス($5〜15)の下限。ここまでは到達確度が相対的に高い" },
-      { px: 10.00, pct: 20, note: "コンセンサス中央。ここで累計半分近くを現金化し、残りを完全なアップサイド狙いに" },
-      { px: 15.00, pct: 20, note: "コンセンサス上限。強気シナリオが現実化した局面" },
-      { px: 21.00, pct: 25, note: "目標の20倍。テールイベントであり、届いた時点で機械的に執行する" },
+      { px: 15.00, pct: 15, note: "2030年コンセンサス上限。ここで最初の現金化を行い、以降の下振れ耐性を作る" },
+      { px: 18.00, pct: 20, note: "強気シナリオ帯($18〜28)の入口。目標の手前で着実に確定させる" },
+      { px: 21.00, pct: 30, note: "目標の20倍。最大の1段であり、届いた時点で機械的に執行する" },
+      { px: 24.00, pct: 20, note: "$21超。ここから上が、$21未満で売った分の目減りを埋め合わせる部分" },
+      { px: 27.00, pct: 15, note: "強気シナリオ帯の上限付近。最終段で全量を売り切る" },
     ],
-    coreNote: "残り10%は「売らないコア」。20倍未達でも部分的成功として評価する設計",
   };
 
   function fmtUsd(n){
@@ -1471,13 +1473,28 @@
         <td style="white-space:normal">${step.note}</td>
       </tr>`;
     });
-    const corePct = 100 - H.ladder.reduce((a, b)=> a + b.pct, 0);
+    const totalPct = H.ladder.reduce((a, b)=> a + b.pct, 0);
+    const corePct = 100 - totalPct;
+    if (corePct > 0) {
+      rows.push(`<tr class="is-core">
+        <td>コア保有</td><td class="num">${corePct}%</td><td class="num">${fmtXrp(H.xrp * corePct / 100)}</td>
+        <td class="num">―</td><td class="num">―</td><td class="num">${fmtXrp(H.xrp * corePct / 100)}</td>
+        <td style="white-space:normal">${H.coreNote || ''}</td>
+      </tr>`);
+    }
+    const wavg = H.ladder.reduce((a, b)=> a + b.px * b.pct / 100, 0);
     rows.push(`<tr class="is-core">
-      <td>コア保有</td><td class="num">${corePct}%</td><td class="num">${fmtXrp(H.xrp * corePct / 100)}</td>
-      <td class="num">―</td><td class="num">―</td><td class="num">${fmtXrp(H.xrp * corePct / 100)}</td>
-      <td style="white-space:normal">${H.coreNote}</td>
+      <td>合計</td><td class="num">${totalPct}%</td><td class="num">${fmtXrp(sold)}</td>
+      <td class="num">―</td><td class="num"><b>${fmtAmt(proceeds)}</b></td>
+      <td class="num">${fmtXrp(H.xrp - sold)}</td>
+      <td style="white-space:normal">加重平均売却価格 <b class="mono tnum">${fmtUsd(wavg)}</b>${
+        Math.abs(wavg - H.target) < 0.005 ? `(目標 ${fmtUsd(H.target)} に一致)` : `(目標 ${fmtUsd(H.target)})`}</td>
     </tr>`);
     document.getElementById('ladderBody').innerHTML = rows.join('');
+
+    // 目標ちょうどで頭打ちになった場合に実現する額(=上振れ段が執行されないケース)
+    const stallAmt = H.ladder.filter(x=> x.px <= H.target).reduce((a, b)=> a + H.xrp * b.pct / 100 * b.px, 0);
+    const stallLeft = H.ladder.filter(x=> x.px > H.target).reduce((a, b)=> a + H.xrp * b.pct / 100, 0);
 
     const inBuyZone = px >= H.buyZone.lo && px <= H.buyZone.hi;
     // 表示は$1.00でも実値が$1.002ということがあるので、上限のすぐ上は「圏内扱い」で伝える
@@ -1492,8 +1509,8 @@
         p: `現在値 ${fmtUsd(px)} は${zoneMsg}分割指値のみで拾い、下限割れでの追撃はしない。サテライト枠の範囲内に収めること。` },
       { tier: 'bad', cap: '撤退ライン', big: `${fmtUsd(H.stopLine.px)} 割れ`,
         p: `日足終値でこの水準を割り込んだら、20倍シナリオの前提が崩れたものとして計画を見直す。現在値 ${fmtUsd(px)} は${belowStop ? 'すでに下回っている。' : 'まだ上。'}` },
-      { tier: 'warn', cap: '次の利確ライン', big: fmtUsd(H.ladder[0].px),
-        p: `${fmtUsd(H.ladder[0].px)} 到達で ${H.ladder[0].pct}%(${fmtXrp(H.xrp * H.ladder[0].pct / 100)})を売却。到達前に比率を動かさないことが、この計画の唯一のルール。` },
+      { tier: 'warn', cap: '最初の利確ライン', big: fmtUsd(H.ladder[0].px),
+        p: `${fmtUsd(H.ladder[0].px)} 到達で ${H.ladder[0].pct}%(${fmtXrp(H.xrp * H.ladder[0].pct / 100)})を売却。ここまでは一切利確しない設計なので、途中の上昇で売りたくなっても比率を動かさないこと。` },
     ];
     document.getElementById('planGrid').innerHTML = plans.map(x=>
       `<div class="plan-card tl-edge ${x.tier}"><span class="tl-chip ${x.tier}">${TIER_META[x.tier].mark} ${TIER_META[x.tier].label}</span>
@@ -1501,11 +1518,16 @@
     ).join('');
 
     document.getElementById('planNote').innerHTML =
-      `<strong style="color:var(--text)">この計画の考え方: </strong>` +
-      `${fmtXrp(H.xrp)}という数量は、20倍が実現すれば ${fmtAmt(atTarget)}、` +
-      `コンセンサス圏の$5〜15なら ${fmtAmt(H.xrp * 5)}〜${fmtAmt(H.xrp * 15)} に相当する。` +
-      `20倍は全条件が同時成立した場合のテールイベントであり、上のラダーは「$5〜15圏で止まっても計画として成立する」ように前半に厚く配分してある。` +
-      `逆に言えば、${fmtUsd(H.ladder[0].px)}・${fmtUsd(H.ladder[1].px)}での利確を飛ばして20倍だけを待つ設計にはしていない。` +
+      `<strong style="color:var(--text)">この配分の理由: </strong>` +
+      `目標は「${fmtUsd(H.target)}で全量売却 = ${fmtAmt(atTarget)}」。` +
+      `ただし${fmtUsd(H.target)}未満で一部を売れば、合計は必ずこの額を下回る。` +
+      `合計を${fmtAmt(atTarget)}に保ったまま比率を分散させる唯一の方法は、<b>加重平均売却価格を${fmtUsd(H.target)}ちょうどにすること</b>` +
+      `— つまり${fmtUsd(H.target)}未満で売る分を、${fmtUsd(H.target)}超で売る分が埋め合わせる形にすることになる。` +
+      `そのため上のラダーは${fmtUsd(H.target)}を中心に対称に配分してあり、加重平均は${fmtUsd(H.ladder.reduce((a,b)=>a+b.px*b.pct/100,0))}、合計は${fmtAmt(proceeds)}で目標と一致する。` +
+      `<br><br><strong style="color:var(--text)">織り込んでおくべき前提: </strong>` +
+      `満額${fmtAmt(proceeds)}の達成には、XRPが${fmtUsd(H.target)}を超えて${fmtUsd(H.ladder[H.ladder.length-1].px)}まで伸びる必要がある。` +
+      `${fmtUsd(H.target)}ちょうどで頭打ちになった場合に実現するのは${fmtAmt(stallAmt)}で、${fmtXrp(stallLeft)}が未売却のまま残る。` +
+      `また最初の利確が${fmtUsd(H.ladder[0].px)}のため、それ以前の上昇局面では利益を一切確定しない設計である点にも留意すること。` +
       `比率は価格が動いてから決めるのではなく、到達前に決めておくこと。本セクションは投資助言ではなく、判断と執行は自己責任で行うこと。`;
   }
   renderHoldings();
