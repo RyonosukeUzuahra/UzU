@@ -621,9 +621,23 @@
       <h2>00 ／ 保有ポジションと売買指針</h2>
       <div class="tag" id="holdingsTag">POSITION PLAN</div>
     </div>
-    <p class="sec-lede">保有中の XRP を、このダッシュボードの目標($21.00)に対してどう運用するかの計画。目標「$21で全量売却 = $84,273」を満たすため、加重平均売却価格が$21ちょうどになるよう$21を中心に対称配分してある。到達価格ごとに売る比率をあらかじめ決めておき、値動きの最中に判断しないで済むようにする。数量・価格は目安であり、注文の執行判断は常に自分で行うこと。</p>
+    <p class="sec-lede">保有中の XRP と現金 ¥800,000 を、このダッシュボードの目標($21.00)に対してどう運用するかの計画。前半の<b>買い増しラダー</b>が現在のフェーズ(いくらでどこまで積むか)、後半の<b>段階的利確ラダー</b>が出口の設計。後者は目標「$21で全量売却 = $17,409」を満たすため、加重平均売却価格が$21ちょうどになるよう$21を中心に対称配分してある。到達価格ごとに売る比率をあらかじめ決めておき、値動きの最中に判断しないで済むようにする。数量・価格は目安であり、注文の執行判断は常に自分で行うこと。</p>
     <div class="stat-row" id="posStats" style="margin-top:0"></div>
     <p class="pos-note" id="posNote"></p>
+    <h3 style="font-size:15px;margin:0 0 12px">買い増しラダー<span class="mult">現金 ¥800,000 の配分</span></h3>
+    <p class="pos-note" id="buyLede"></p>
+    <div class="ladder-wrap">
+      <table class="ladder" id="buyTable">
+        <thead>
+          <tr>
+            <th>段</th><th>投入額</th><th>指値帯</th><th>取得見込</th><th>累計保有</th><th>累計投入</th><th>平均取得</th><th>方針</th>
+          </tr>
+        </thead>
+        <tbody id="buyBody"></tbody>
+      </table>
+    </div>
+    <p class="moonshot-note" id="buyNote"></p>
+
     <h3 style="font-size:15px;margin:0 0 12px">段階的利確ラダー</h3>
     <div class="ladder-wrap">
       <table class="ladder" id="ladderTable">
@@ -1407,12 +1421,31 @@
   // 保有数量と計画。数量はユーザー申告値。buyZone / stopLine / ladder の note は
   // 日次更新で入れ替わりうるが、xrp と avgCost はユーザーの指示なしに変更しないこと。
   const HOLDINGS = {
-    xrp: 4013,
-    avgCost: null,           // 取得単価(USD)。入れると含み損益も表示される
+    xrp: 829,
+    avgCost: 1.53,           // 取得単価(USD)。¥240 @ 約¥158.5/$ 換算。入れると含み損益も表示される
     target: 21.00,           // 本ダッシュボードの目標価格
     buyZone:  { lo: 1.34, hi: 1.45 },
     stopLine: { px: 1.28 },
-    // 目標「$21で全量売却=$84,273」を満たすため、加重平均売却価格が
+    fxJpy:    158.5,         // 円換算レート(USD/JPY)。円建てで考えるための表示用
+    cashJpy:  800000,        // 買い増しに回せる現金(円)
+    prevQty:  4013,          // ¥230での全量売却前の保有数量。枚数回復の基準値
+    // 買い増しラダー。円建てで金額を先に決め、値動きの最中に判断しないための設計。
+    // lo/hi は USD の指値帯。cond:true の段は条件成立時のみ執行する温存枠。
+    buyLadder: [
+      { jpy: 160000, lo: 1.50, hi: 1.55, cond: false,
+        note: "買い戻しライン $1.58(¥251)の内側。すでに枚数回復が成立する水準で、上放れした場合の取り逃しを防ぐ" },
+      { jpy: 180000, lo: 1.43, hi: 1.45, cond: false,
+        note: "年間の損益分岐ゾーン。自分が売った ¥230 を買い戻す段。RSI 83 からの一次押し目の本命" },
+      { jpy: 200000, lo: 1.30, hi: 1.35, cond: false,
+        note: "ロング強制清算の連鎖ゾーン。リスク/リワードが最も良く、最大配分を置く" },
+      { jpy: 140000, lo: 1.19, hi: 1.21, cond: false,
+        note: "ブレイクアウト起点(旧 $1.20 抵抗線)の押し戻し。今回の上昇幅の50%戻しに相当" },
+      { jpy: 120000, lo: 0.99, hi: 1.05, cond: true,
+        note: "温存枠。(a) 全戻しでの投げ売り拾い / (b) 日足終値 $2.09 超で上放れ確定なら ¥331 で追撃 / (c) どちらも来なければ次サイクルまで現金のまま" },
+    ],
+    // 待ちすぎて全部取り逃すのを防ぐ機械的ルール
+    escalation: "9/15 の CLARITY Act クローチャー採決の通過後、9/30 時点で第3段・第4段が未約定かつ $1.83(¥290)超なら、未消化分の半分だけ成行投入し、残り半分は第5段に合流させる。",
+    // 目標「$21で全量売却=$17,409」を満たすため、加重平均売却価格が
     // ちょうど $21.00 になるよう $21 を中心に対称配分している。
     // 合計比率は必ず100%(=全量売却)、Σ(px×pct)/100 は必ず 21.00 に保つこと。
     ladder: [
@@ -1436,6 +1469,72 @@
     const el = document.getElementById('statCurrentPrice');
     const v = el ? parseFloat(el.textContent.replace(/[^0-9.]/g, '')) : NaN;
     return isNaN(v) || !v ? 1.00 : v;   // 日次更新のheroの値を自動で拾う
+  }
+
+  function fmtJpy(n){ return '\u00a5' + Math.round(n).toLocaleString('en-US'); }
+
+  // 買い増しラダー: 円建ての投入額を先に決め、価格帯ごとの取得枚数を機械的に出す
+  function renderBuyLadder(){
+    const H = HOLDINGS;
+    if (!H.buyLadder || !document.getElementById('buyBody')) return;
+    const px = currentPx(), fx = H.fxJpy;
+    const jpy = u => u * fx;                       // USD -> JPY
+    const usd = j => j / fx;                       // JPY -> USD
+
+    // 売却前の枚数に戻すのに必要な平均単価。これを下回っていれば買いは枚数ベースで成立する
+    const needQty = Math.max(H.prevQty - H.xrp, 0);
+    const breakEven = needQty ? usd(H.cashJpy) / needQty : null;
+
+    let qty = H.xrp, cost = H.xrp * (H.avgCost || px), spent = 0;
+    const rows = H.buyLadder.map((step, i)=>{
+      const mid = (step.lo + step.hi) / 2;
+      const got = usd(step.jpy) / mid;
+      qty += got; cost += usd(step.jpy); spent += step.jpy;
+      const avg = cost / qty;
+      return `<tr${step.cond ? ' class="is-core"' : ''}>
+        <td><b class="mono tnum">第${i + 1}段</b>${step.cond ? '<span class="mult">条件付</span>' : ''}</td>
+        <td class="num">${fmtJpy(step.jpy)}<span class="mult">${Math.round(step.jpy / H.cashJpy * 100)}%</span></td>
+        <td class="num">${fmtUsd(step.lo)}〜${fmtUsd(step.hi)}<span class="mult">${fmtJpy(jpy(step.lo))}〜${fmtJpy(jpy(step.hi))}</span></td>
+        <td class="num">${fmtXrp(got)}</td>
+        <td class="num">${fmtXrp(qty)}</td>
+        <td class="num">${fmtJpy(spent)}</td>
+        <td class="num">${fmtUsd(avg)}<span class="mult">${fmtJpy(jpy(avg))}</span></td>
+        <td style="white-space:normal">${step.note}</td>
+      </tr>`;
+    });
+    const avgAll = cost / qty;
+    rows.push(`<tr class="is-core">
+      <td>全段約定時</td>
+      <td class="num"><b>${fmtJpy(spent)}</b></td>
+      <td class="num">―</td>
+      <td class="num">${fmtXrp(qty - H.xrp)}</td>
+      <td class="num"><b>${fmtXrp(qty)}</b></td>
+      <td class="num">―</td>
+      <td class="num"><b>${fmtUsd(avgAll)}</b><span class="mult">${fmtJpy(jpy(avgAll))}</span></td>
+      <td style="white-space:normal">目標 ${fmtUsd(H.target)} 到達時 <b class="mono tnum">${fmtAmt(qty * H.target)}</b>(${fmtJpy(jpy(qty * H.target))})。売却前の ${fmtXrp(H.prevQty)} を ${fmtXrp(qty - H.prevQty)} 上回る</td>
+    </tr>`);
+    document.getElementById('buyBody').innerHTML = rows.join('');
+
+    const inside = breakEven && px < breakEven;
+    document.getElementById('buyLede').innerHTML =
+      `この目標で意味を持つのは金額ではなく<b>枚数</b>だけ。売却前の ${fmtXrp(H.prevQty)} に戻すには あと ${fmtXrp(needQty)} 必要で、` +
+      `現金 ${fmtJpy(H.cashJpy)} をこれで割ると <b class="mono tnum">${fmtUsd(breakEven)}(${fmtJpy(jpy(breakEven))})</b> ` +
+      `— これが<b>買い戻しライン</b>。平均取得がこの線を下回れば、売却前の枚数を回復してなお現金が余る。` +
+      `現在値 ${fmtUsd(px)}(${fmtJpy(jpy(px))})は` +
+      (inside ? `<b>すでにこの内側</b>。「買っていい価格か」ではなく「どこまで平均を下げられるか」の局面。`
+              : `<b>この線より上</b>。枚数の回復が難しくなる水準に入っている。`);
+
+    document.getElementById('buyNote').innerHTML =
+      `<strong style="color:var(--text)">第1段を今日置く理由: </strong>` +
+      `日足RSIは82.9で明確な買われすぎ、$1.65〜$1.70では実際に跳ね返されている。一方でホワイトハウス会合(8/19)・` +
+      `ETF週間流入の反転(+$39.78M)・財務省の長期債買い戻し倍増(9/9発効)・CLARITY Act採決(9/15)と、触媒は改善方向にある。` +
+      `テクニカルは「分割しろ」と言い、ファンダは「遅れるな」と言う。両方を満たせるのが買い戻しラインの内側という条件で、` +
+      `第1段の${Math.round(H.buyLadder[0].jpy / H.cashJpy * 100)}%は利益を狙う枠ではなく<b>取り逃しを防ぐ保険料</b>として置く。` +
+      `<br><br><strong style="color:var(--text)">エスカレーション条項: </strong>${H.escalation}` +
+      `<br><br><strong style="color:var(--text)">留意: </strong>` +
+      `¥230での全量売却は2026年の課税イベント(雑所得・総合課税)であり、納税は2027年3月。取得原価が未確定のため税額は本表に織り込んでいない。` +
+      `また個人は原則<b>総平均法</b>で、年内の追加購入が年間平均取得単価を通じて課税所得を動かす。` +
+      `数量・価格は目安であり、執行判断は常に自己責任で行うこと。`;
   }
 
   function renderHoldings(){
@@ -1533,6 +1632,7 @@
       `比率は価格が動いてから決めるのではなく、到達前に決めておくこと。本セクションは投資助言ではなく、判断と執行は自己責任で行うこと。`;
   }
   renderHoldings();
+  renderBuyLadder();
 
   // ---- collapse the long static prose (content is kept in full, just folded) ----
   function wrapClamp(el, lines){
@@ -1724,6 +1824,7 @@
     });
     renderTicker();
     renderHoldings();
+    renderBuyLadder();
     redrawCharts();
   }
 
