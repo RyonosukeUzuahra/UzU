@@ -492,6 +492,27 @@
 
   /* strategy timeline */
   .strategy-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  /* ---------- multi-timeframe playbook ---------- */
+  .tf-list { display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+  .tf-row { background: var(--bg-elevated); padding: 18px 20px; display: grid; grid-template-columns: 172px 1fr; gap: 22px; }
+  .tf-row .tf-id .name { font-family: var(--mono); font-weight: 800; font-size: 20px; letter-spacing: -0.01em; }
+  .tf-row .tf-id .en { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; color: var(--text-faint); margin-top: 2px; }
+  .tf-row .tf-id .role { font-size: 12.5px; color: var(--text); margin-top: 9px; font-weight: 700; line-height: 1.45; }
+  .tf-row .tf-id .tl-chip { margin-top: 10px; }
+  .tf-row dl { margin: 0; }
+  .tf-row dt {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+    color: var(--text-faint); margin-top: 14px;
+  }
+  .tf-row dl > dt:first-child { margin-top: 0; }
+  .tf-row dd { margin: 4px 0 0; font-size: 13.5px; color: var(--text-muted); line-height: 1.65; }
+  .tf-row dd ul { margin: 0; padding-left: 18px; }
+  .tf-row dd li { margin-bottom: 5px; }
+  .tf-row dd li:last-child { margin-bottom: 0; }
+  .tf-row dd b { color: var(--text); }
+  .tf-note { font-family: var(--mono); font-size: 11px; color: var(--text-faint); margin: 0 0 18px; }
+  @media (max-width: 760px) { .tf-row { grid-template-columns: 1fr; gap: 12px; } }
   .strategy-col { border: 1px solid var(--border); background: var(--bg-elevated); display: flex; flex-direction: column; }
   .strategy-col .sh { padding: 16px 18px; border-bottom: 1px solid var(--border); }
   .strategy-col .sh .horizon { font-family: var(--mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.06em; }
@@ -819,36 +840,12 @@
 
   <section id="strategy">
     <div class="sec-head">
-      <h2>05 ／ 運用戦略 ― 短期 to 長期</h2>
-      <div class="tag">MULTI-HORIZON PLAYBOOK</div>
+      <h2>05 ／ 運用戦略 ― 時間軸別プレイブック</h2>
+      <div class="tag">MULTI-TIMEFRAME PLAYBOOK</div>
     </div>
-    <div class="strategy-cols">
-      <div class="strategy-col">
-        <div class="sh"><div class="horizon">〜数週間 ・ トレーディング目線</div><h3>短期</h3></div>
-        <ul>
-          <li>$1.00〜$1.08のレンジが主戦場。$1.02〜$1.00の防衛ゾーン割れは$0.85〜$0.90までの下落シナリオを想定し損切りラインを設定。DailyCoinが指摘する月足Tom DeMark Sequential買いシグナル(dailycoin.com、8/9)は中期の反転候補として注視。</li>
-          <li>$1.06(DailyCoinが指摘する抵抗、上抜けで$1.35→$1.64が視野、dailycoin.com、8/9)→$1.10〜$1.11(EMA20・ピボット)→$1.17〜$1.24(直近レジスタンス帯)の抵抗テストが焦点。上抜けできれば$1.1465→$1.16→$1.32(inverse H&S目標)への戻りを試す。</li>
-          <li>The Block/CoinDeskは8/8、Thune院内総務がCLARITY Actへのクローチャーを提出し9/15に本会議採決の日程が正式確定したと報道(theblock.co、coindesk.com、8/8)。9/15までは規制カタリスト不在、マクロ地合い(今週は米CPI・PPI・小売売上高、tradingkey.com、8/10)・ETF週次フローの3点を最重要カレンダーとして監視。</li>
-          <li>レンジ下限での計画的な分割買い、上限でのトレーディング利確。ポジションはサテライト枠のみで運用。</li>
-        </ul>
-      </div>
-      <div class="strategy-col">
-        <div class="sh"><div class="horizon">6ヶ月〜2年 ・ スイング／積立目線</div><h3>中期</h3></div>
-        <ul>
-          <li>CLARITY Act可決・ETF流入拡大・ODL実需データの3触媒に応じてサイズを調整するイベントドリブン型DCA。</li>
-          <li>$1.65奪還が「レンジ→トレンド」への転換シグナル。</li>
-          <li>銀行のRLUSD/フィアット優先傾向を四半期ごとに点検し、「XRP実需」テーゼの生死を判定。</li>
-        </ul>
-      </div>
-      <div class="strategy-col">
-        <div class="sh"><div class="horizon">2年超 ・ コアポジション</div><h3>長期</h3></div>
-        <ul>
-          <li>2030年コンセンサスは$5〜15、強気上限は$18〜28。20倍はこの上限帯のテールイベント。</li>
-          <li>コアポジションは「売らない」前提で設計し、短期ボラティリティに惑わされない。</li>
-          <li>保有期間は次の強気サイクル1〜2周分(目安5〜10年)を想定。総時価総額拡大とアルトシーズンを長期トリガーに。</li>
-        </ul>
-      </div>
-    </div>
+    <p class="sec-lede">同じ相場でも、見る足が変われば「やるべきこと」が変わる。ここでは <b>月足 → 週足 → 日足 → 4時間足 → 1時間足</b> の順に、各時間軸に<b>ひとつだけ役割を与える</b>。上位足が方針を決め、下位足は執行の質だけを担当する。この順序が逆転すると、1時間足のノイズで20倍テーゼを降りることになる。</p>
+    <p class="tf-note" id="tfNote"></p>
+    <div class="tf-list" id="tfList"></div>
   </section>
 
   <section id="moonshot">
@@ -1474,6 +1471,100 @@
     const v = el ? parseFloat(el.textContent.replace(/[^0-9.]/g, '')) : NaN;
     return isNaN(v) || !v ? 1.00 : v;   // 日次更新のheroの値を自動で拾う
   }
+
+  // ---- 時間軸別プレイブック ----
+  // 各足に役割はひとつだけ。上位足が方針、下位足は執行の質。
+  // 今回の上昇波 $0.9915(8/11 52週安値) -> $1.66(8/22高値) を基準にフィボを引く。
+  const WAVE = { lo: 0.9915, hi: 1.66 };
+  const fibBack = f => WAVE.hi - (WAVE.hi - WAVE.lo) * f;   // 押し目
+  const fibExt  = f => WAVE.lo + (WAVE.hi - WAVE.lo) * f;   // 上値目標
+
+  const TIMEFRAMES = [
+    {
+      tf: '月足', en: 'MONTHLY', tier: 'good', role: 'テーゼの生死判定',
+      watch: '月足終値／高値・安値の切り上げ／ATH $3.65(2025年7月)・52週高値 $3.18',
+      now: '8月は月間 <b>+48%</b> で2024年11月以来の最強月。1年続いた下降トレンドを上抜けた。ただし転換の1本目にすぎず、確定はしていない。',
+      rules: [
+        'コア保有の売買判断は<b>この足だけ</b>で行う。日足以下のノイズで20倍テーゼを降りない。',
+        '月足終値で <b>$1.65</b> 超 → 「レンジ相場 → トレンド相場」への転換確定。利確ラダーを有効化する準備段階に入る。',
+        '月足終値で <b>$1.00</b> 割れ → 52週安値 $0.9915 の無効化。テーゼの前提が崩れたものとして計画を全面的に見直す。<b>撤退判断はこの1本のみ</b>。',
+      ],
+      use: '第5段(温存枠 ¥120,000)の解放判断。月足が上昇継続を確認するまでは現金のまま置く。',
+    },
+    {
+      tf: '週足', en: 'WEEKLY', tier: 'good', role: 'ラダーの発動可否とサイズ調整',
+      watch: '週足終値 vs $1.45(自分の売却水準・年間損益分岐帯)／週足RSI／ETF週次フロー',
+      now: '7日で <b>+48%</b>、21ヶ月ぶりの最強週。ETF週間流入も8/21週で <b>+$39.78M</b> と5月以来の高水準へ反転。巨大な陽線の直後なので、次の1〜2週は消化局面になりやすい。',
+      rules: [
+        'ETFフローは週次で発表されるので<b>週足で読む</b>。2週連続プラスなら第1〜2段を厚めに。',
+        '週足終値が <b>$1.45 を維持</b> → 押し目は浅いと想定し、上の段(第1・第2)に配分を寄せる。',
+        '週足終値が <b>$1.45 割れ</b> → 下の段(第3・第4)まで待つ。指値は動かさない。',
+        'カタリスト週は 9/9(財務省の長期債買い戻し拡大が発効)と 9/15(CLARITY Act クローチャー採決)。この2週の評価は週足終値のみで行う。',
+      ],
+      use: '第1〜2段を今週入れるか、第3〜4段まで待つかの判断。エスカレーション条項の起算もこの足。',
+    },
+    {
+      tf: '日足', en: 'DAILY', tier: 'warn', role: 'ラダーの主戦場 ― 指値を置く場所を決める',
+      watch: 'RSI(14) <b>82.9</b>／MACD(12,26,9) +0.114(買い)／ピボット $1.36・R $1.45・S $1.28／上昇波のフィボナッチ',
+      now: 'RSI 82.9 は極端な買われすぎで、$1.65〜$1.70 では実際に跳ね返されている(8/22 高値 $1.66)。一方 MACD は買いのままで、<b>モメンタムと過熱が同居</b>している状態。',
+      rules: [
+        `指値はすべてフィボナッチに置く。38.2%=<b>${fmtUsd(fibBack(0.382))}</b>、50%=<b>${fmtUsd(fibBack(0.5))}</b>、61.8%=<b>${fmtUsd(fibBack(0.618))}</b>。第3段($1.30〜$1.35)は50%戻しにちょうど重なる。`,
+        '判定は<b>日足終値のみ</b>。ザラ場の突っ込みで指値を動かさない。',
+        'RSIが70を下回るまで、第1段以外で成行は使わない。過熱したまま追いかけない。',
+        `上値目標もフィボ延長で置く。1.272倍=<b>${fmtUsd(fibExt(1.272))}</b>(アナリストの $1.83 と一致)、1.618倍=<b>${fmtUsd(fibExt(1.618))}</b>(同 $2.09 と一致)。この2つが独立に一致しているのは信頼できる根拠。`,
+      ],
+      use: '第1〜4段の指値価格そのもの。ラダーの価格帯はこの足の構造から引いている。',
+    },
+    {
+      tf: '4時間足', en: '4-HOUR', tier: 'warn', role: '指値の置き直しと、1段を刻む単位',
+      watch: '4H EMA20/50／押し安値の切り上げ・切り下げ／出来高',
+      now: '$1.45〜$1.54 のレンジで直近の上昇を消化中。方向感は日足に従属しており、この足単独では強弱を判定しない。',
+      rules: [
+        '日足の指値帯に到達しても<b>即全量ではない</b>。4Hで下ヒゲ＋出来高増を確認してから残りを入れる。',
+        '4Hが安値の切り下げを続けている間は、その段の指値を1段下げる。<b>落ちるナイフは掴まない</b>。',
+        '4H終値で EMA20 を回復したら、その段は「約定させに行く」モードへ切り替える。',
+        '<b>この足で方針は変えない</b>。変えるのは執行の刻みだけ。',
+      ],
+      use: '第2〜4段の1段分を、2〜3回に分けて入れるときの区切り。',
+    },
+    {
+      tf: '1時間足', en: 'HOURLY', tier: 'warn', role: '執行のみ ― 方針判断には一切使わない',
+      watch: '直近1〜2本の高値・安値／VWAP／板の厚み',
+      now: '方針判断には使わない足。ここでの唯一の目的は、同じ数量をより安く取ることに尽きる。',
+      rules: [
+        '<b>成行を使わない。</b> 8/23 22:39 の買い直しは1時間足の高値圏での成行で、売却の加重平均 ¥227.91 に対し ¥240.88 を払った(+¥12.97/枚・829枚で <b>¥10,754</b>)。この足の役割はそのコストを削ることにある。',
+        '1段の金額を1時間足の単位で2〜3回に分けて指値。1本の陽線に全額をぶつけない。',
+        '<b>1時間足のシグナルでポジション方針を変えない。</b> ここはノイズが最も多く、上位足の判断を上書きしてはいけない。',
+        '板が薄い時間帯(日本時間の早朝)の成行は避ける。急騰局面ではオーバーシュートしやすい。',
+      ],
+      use: '各段を実際に発注する瞬間の作法。金額と価格帯は上位足が決め、この足は「どう入れるか」だけ。',
+    },
+  ];
+
+  function renderTimeframes(){
+    const el = document.getElementById('tfList');
+    if (!el) return;
+    el.innerHTML = TIMEFRAMES.map(t=> `
+      <div class="tf-row">
+        <div class="tf-id">
+          <div class="name">${t.tf}</div>
+          <div class="en">${t.en}</div>
+          <div class="role">${t.role}</div>
+          <span class="tl-chip ${t.tier}">${TIER_META[t.tier].mark} ${TIER_META[t.tier].label}</span>
+        </div>
+        <dl>
+          <dt>見る指標</dt><dd>${t.watch}</dd>
+          <dt>いまの読み</dt><dd>${t.now}</dd>
+          <dt>ルール</dt><dd><ul>${t.rules.map(r=> `<li>${r}</li>`).join('')}</ul></dd>
+          <dt>このポジションでの使い方</dt><dd>${t.use}</dd>
+        </dl>
+      </div>`).join('');
+    const n = document.getElementById('tfNote');
+    if (n) n.textContent =
+      `フィボナッチは今回の上昇波 ${fmtUsd(WAVE.lo)}(8/11 52週安値) → ${fmtUsd(WAVE.hi)}(8/22 高値) を基準に算出。`
+      + `価格・指標は目安であり、注文の執行判断は常に自己責任で行うこと。`;
+  }
+  renderTimeframes();
 
   function fmtJpy(n){ return '\u00a5' + Math.round(n).toLocaleString('en-US'); }
 
