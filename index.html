@@ -645,8 +645,18 @@
     <p class="sec-lede">保有中の XRP と現金 ¥800,000 を、このダッシュボードの目標($21.00)に対してどう運用するかの計画。前半の<b>買い増しラダー</b>が現在のフェーズ(いくらでどこまで積むか)、後半の<b>段階的利確ラダー</b>が出口の設計。後者は目標「$21で全量売却 = $17,409」を満たすため、加重平均売却価格が$21ちょうどになるよう$21を中心に対称配分してある。到達価格ごとに売る比率をあらかじめ決めておき、値動きの最中に判断しないで済むようにする。数量・価格は目安であり、注文の執行判断は常に自分で行うこと。</p>
     <div class="stat-row" id="posStats" style="margin-top:0"></div>
     <p class="pos-note" id="posNote"></p>
-    <h3 style="font-size:15px;margin:0 0 12px">買い増しラダー<span class="mult">現金 ¥800,000 の配分</span></h3>
+    <h3 style="font-size:15px;margin:0 0 12px">買い増しラダー<span class="mult" id="buyCashCap"></span></h3>
     <p class="pos-note" id="buyLede"></p>
+    <h4 style="font-size:13px;margin:0 0 10px;color:var(--text-muted);font-family:var(--mono);letter-spacing:.04em">執行済み</h4>
+    <div class="ladder-wrap">
+      <table class="ladder" id="buyDoneTable">
+        <thead>
+          <tr><th>約定日時</th><th>数量</th><th>単価</th><th>金額</th><th>m/t</th><th>手数料</th><th>メモ</th></tr>
+        </thead>
+        <tbody id="buyDoneBody"></tbody>
+      </table>
+    </div>
+    <h4 style="font-size:13px;margin:22px 0 10px;color:var(--text-muted);font-family:var(--mono);letter-spacing:.04em">残りのラダー</h4>
     <div class="ladder-wrap">
       <table class="ladder" id="buyTable">
         <thead>
@@ -1453,32 +1463,42 @@
   // 保有数量と計画。数量はユーザー申告値。buyZone / stopLine / ladder の note は
   // 日次更新で入れ替わりうるが、xrp と avgCost はユーザーの指示なしに変更しないこと。
   const HOLDINGS = {
-    xrp: 829.322,            // bitbank 現物注文履歴の約定値(2026-08-23 22:39 成行買い)
-    avgCost: 1.52,           // 取得単価(USD)。¥240.88 @ 約¥158.5/$ 換算。入れると含み損益も表示される
+    xrp: 2480.351,           // bitbank 約定履歴の実測合計(2026-08-23〜08-26 の5約定)
+    avgCost: 1.45,           // 取得単価(USD)。¥232.01 @ ¥159.5/$ 換算。入れると含み損益も表示される
     target: 21.00,           // 本ダッシュボードの目標価格
     buyZone:  { lo: 1.28, hi: 1.36 },
     stopLine: { px: 1.18 },
-    fxJpy:    158.5,         // 円換算レート(USD/JPY)。円建てで考えるための表示用
-    cashJpy:  800000,        // 買い増しに回せる現金(円)
+    fxJpy:    159.5,         // 円換算レート(USD/JPY)。2026-08-29 実測(frankfurter 159.68 / er-api 159.33)
+    cashJpy:  424302,        // 買い増しに回せる現金(円)。¥800,000 のうち ¥375,698 を執行済み
+    ladderNo: 2,             // 執行済みの段数。残りラダーの採番オフセット
+    // 執行済み(bitbank 約定履歴の実測値)。手数料は maker がマイナス=リベート受取。
+    executed: [
+      { date: '8/23 22:39', qty: 829.3220, jpy: 240.88, mt: 'taker', fee: +239.72, inPlan: false,
+        note: '全量売却の直後の買い直し。高値圏での成行で ¥800,000 枠の外' },
+      { date: '8/24 10:53', qty: 170.7287, jpy: 233.98, mt: 'taker', fee: +47.94, inPlan: true,
+        note: '第1段の入り。まだ成行' },
+      { date: '8/25 16:51-18:53', qty: 680.3007, jpy: 236.00, mt: 'maker', fee: -32.11, inPlan: true,
+        note: '第1段の残り。指値(メイカー)へ切り替え、手数料がリベートに転じた' },
+      { date: '8/26 23:46', qty: 800.0000, jpy: 219.00, mt: 'maker', fee: -35.04, inPlan: true,
+        note: '第2段。指値を置いて押し目を拾えた。ラダー設計どおりの約定' },
+    ],
     prevQty:  4013.726,      // 全量売却前の保有数量(2026/8/21-22の3回に分けて売却)。枚数回復の基準値
     // 2026年の実績(bitbank 現物注文履歴より)。売却は3回に分割され加重平均は ¥227.91。
     sold2026: { qty: 4013.726, avgJpy: 227.91, proceedsJpy: 914760 },
     // 買い増しラダー。円建てで金額を先に決め、値動きの最中に判断しないための設計。
     // lo/hi は USD の指値帯。cond:true の段は条件成立時のみ執行する温存枠。
     buyLadder: [
-      { jpy: 160000, lo: 1.50, hi: 1.55, cond: false,
-        note: "買い戻しライン $1.58(¥251)の内側。すでに枚数回復が成立する水準で、上放れした場合の取り逃しを防ぐ" },
-      { jpy: 180000, lo: 1.43, hi: 1.45, cond: false,
-        note: "年間の損益分岐ゾーン。自分が売った ¥230 を買い戻す段。RSI 83 からの一次押し目の本命" },
-      { jpy: 200000, lo: 1.30, hi: 1.35, cond: false,
-        note: "ロング強制清算の連鎖ゾーン。リスク/リワードが最も良く、最大配分を置く" },
-      { jpy: 140000, lo: 1.19, hi: 1.21, cond: false,
-        note: "ブレイクアウト起点(旧 $1.20 抵抗線)の押し戻し。今回の上昇幅の50%戻しに相当" },
-      { jpy: 120000, lo: 0.99, hi: 1.05, cond: true,
-        note: "温存枠。(a) 全戻しでの投げ売り拾い / (b) 日足終値 $2.09 超で上放れ確定なら ¥331 で追撃 / (c) どちらも来なければ次サイクルまで現金のまま" },
+      { jpy: 100000, lo: 1.37, hi: 1.40, cond: false,
+        note: "38.2%戻し($1.422)を割った直後の水準。$1.40 は今回の押し目が健全に収まるかの分水嶺で、8/26に拾えた ¥219 とほぼ同水準" },
+      { jpy: 150000, lo: 1.30, hi: 1.35, cond: false,
+        note: "50%戻し($1.339)。押し目として最も素直な水準で、残りの最大配分を置く" },
+      { jpy: 110000, lo: 1.20, hi: 1.26, cond: false,
+        note: "61.8%戻し($1.256)とブレイクアウト起点 $1.20 が重なる帯。ここまで来れば今回の上昇波は一旦否定される" },
+      { jpy: 64302, lo: 0.99, hi: 1.14, cond: true,
+        note: "温存枠。(a) 78.6%戻し$1.138〜全戻し$0.99 での投げ売り拾い / (b) 日足終値 $2.09 超なら上放れ追撃に転用 / (c) どちらも来なければ次サイクルまで現金のまま" },
     ],
     // 待ちすぎて全部取り逃すのを防ぐ機械的ルール
-    escalation: "9/15 の CLARITY Act クローチャー採決の通過後、9/30 時点で第3段・第4段が未約定かつ $1.83(¥290)超なら、未消化分の半分だけ成行投入し、残り半分は第5段に合流させる。",
+    escalation: "9/15 の CLARITY Act クローチャー採決の通過後、9/30 時点で第4段・第5段が未約定かつ $1.88(¥300 = 1.272倍延長)超なら、未消化分の半分だけ成行投入し、残り半分は第6段に合流させる。",
     // 目標「$21で全量売却=$17,409」を満たすため、加重平均売却価格が
     // ちょうど $21.00 になるよう $21 を中心に対称配分している。
     // 合計比率は必ず100%(=全量売却)、Σ(px×pct)/100 は必ず 21.00 に保つこと。
@@ -1508,7 +1528,9 @@
   // ---- 時間軸別プレイブック ----
   // 各足に役割はひとつだけ。上位足が方針、下位足は執行の質。
   // 今回の上昇波 $0.9915(8/11 52週安値) -> $1.66(8/22高値) を基準にフィボを引く。
-  const WAVE = { lo: 0.9915, hi: 1.66 };
+  // 2026-08-29 更新: サイクル安値は 8/17 の $0.9877、高値は 8/22 の $1.69。
+  // この波で引いた 38.2%=$1.42 / 50%=$1.34 は複数メディアの水準と一致する。
+  const WAVE = { lo: 0.9877, hi: 1.69 };
   const fibBack = f => WAVE.hi - (WAVE.hi - WAVE.lo) * f;   // 押し目
   const fibExt  = f => WAVE.lo + (WAVE.hi - WAVE.lo) * f;   // 上値目標
 
@@ -1516,54 +1538,54 @@
     {
       tf: '月足', en: 'MONTHLY', tier: 'good', role: 'テーゼの生死判定',
       watch: '月足終値／高値・安値の切り上げ／ATH $3.65(2025年7月)・52週高値 $3.18',
-      now: '8月は月間 <b>+48%</b> で2024年11月以来の最強月。1年続いた下降トレンドを上抜けた。ただし転換の1本目にすぎず、確定はしていない。',
+      now: '8月は月間 <b>+37%</b> で2026年の最強月。1年続いた下降トレンドを上抜けた。ただし月末にかけて高値 $1.69 から押し戻され<b>上ヒゲの長い形</b>になりつつあり、転換の1本目という評価は変えない。',
       rules: [
         'コア保有の売買判断は<b>この足だけ</b>で行う。日足以下のノイズで20倍テーゼを降りない。',
         '月足終値で <b>$1.65</b> 超 → 「レンジ相場 → トレンド相場」への転換確定。利確ラダーを有効化する準備段階に入る。',
         '月足終値で <b>$1.00</b> 割れ → 52週安値 $0.9915 の無効化。テーゼの前提が崩れたものとして計画を全面的に見直す。<b>撤退判断はこの1本のみ</b>。',
       ],
-      use: '第5段(温存枠 ¥120,000)の解放判断。月足が上昇継続を確認するまでは現金のまま置く。',
+      use: '第6段(温存枠 ¥64,302)の解放判断。月足が上昇継続を確認するまでは現金のまま置く。',
     },
     {
-      tf: '週足', en: 'WEEKLY', tier: 'good', role: 'ラダーの発動可否とサイズ調整',
-      watch: '週足終値 vs $1.45(自分の売却水準・年間損益分岐帯)／週足RSI／ETF週次フロー',
-      now: '7日で <b>+48%</b>、21ヶ月ぶりの最強週。ETF週間流入も8/21週で <b>+$39.78M</b> と5月以来の高水準へ反転。巨大な陽線の直後なので、次の1〜2週は消化局面になりやすい。',
+      tf: '週足', en: 'WEEKLY', tier: 'warn', role: 'ラダーの発動可否とサイズ調整',
+      watch: '週足終値 vs $1.43(自分の売却水準 ¥227.91 の換算値)／週足RSI／ETF週次フロー',
+      now: '前週は 8/17 の $0.9877 から 8/22 の $1.69 まで5日で約 <b>+70%</b>。今週はピークから <b>-18%</b> の巻き戻しで陰線。ETF流入とレバレッジ解消(ロング清算)の綱引きになっており、<b>予告どおり消化局面に入った</b>。',
       rules: [
         'ETFフローは週次で発表されるので<b>週足で読む</b>。2週連続プラスなら第1〜2段を厚めに。',
         '週足終値が <b>$1.45 を維持</b> → 押し目は浅いと想定し、上の段(第1・第2)に配分を寄せる。',
         '週足終値が <b>$1.45 割れ</b> → 下の段(第3・第4)まで待つ。指値は動かさない。',
         'カタリスト週は 9/9(財務省の長期債買い戻し拡大が発効)と 9/15(CLARITY Act クローチャー採決)。この2週の評価は週足終値のみで行う。',
       ],
-      use: '第1〜2段を今週入れるか、第3〜4段まで待つかの判断。エスカレーション条項の起算もこの足。',
+      use: '第3段を今週入れるか、第4〜5段まで待つかの判断。エスカレーション条項の起算もこの足。',
     },
     {
       tf: '日足', en: 'DAILY', tier: 'warn', role: 'ラダーの主戦場 ― 指値を置く場所を決める',
-      watch: 'RSI(14) <b>82.9</b>／MACD(12,26,9) +0.114(買い)／ピボット $1.36・R $1.45・S $1.28／上昇波のフィボナッチ',
-      now: 'RSI 82.9 は極端な買われすぎで、$1.65〜$1.70 では実際に跳ね返されている(8/22 高値 $1.66)。一方 MACD は買いのままで、<b>モメンタムと過熱が同居</b>している状態。',
+      watch: 'RSI(14) <b>66.7〜72</b>(ピークは 88)／$1.40 の攻防／上昇波のフィボナッチ',
+      now: 'RSI はピーク <b>88</b>(2025年7月の ATH $3.65 以来の水準)から 66.7〜72 へ低下し、過熱は解消しつつあるがまだ高い。焦点は <b>$1.40</b> の一点で、守れば $1.42〜$1.60 のレンジ消化、割れれば下の水準を試す。現在値はすでにその境界上にある。',
       rules: [
-        `指値はすべてフィボナッチに置く。38.2%=<b>${fmtUsd(fibBack(0.382))}</b>、50%=<b>${fmtUsd(fibBack(0.5))}</b>、61.8%=<b>${fmtUsd(fibBack(0.618))}</b>。第3段($1.30〜$1.35)は50%戻しにちょうど重なる。`,
+        `指値はすべてフィボナッチに置く。38.2%=<b>${fmtUsd(fibBack(0.382))}</b>、50%=<b>${fmtUsd(fibBack(0.5))}</b>、61.8%=<b>${fmtUsd(fibBack(0.618))}</b>。第4段($1.30〜$1.35)は50%戻しにちょうど重なる。`,
         '判定は<b>日足終値のみ</b>。ザラ場の突っ込みで指値を動かさない。',
         'RSIが70を下回るまで、第1段以外で成行は使わない。過熱したまま追いかけない。',
         `上値目標もフィボ延長で置く。1.272倍=<b>${fmtUsd(fibExt(1.272))}</b>(アナリストの $1.83 と一致)、1.618倍=<b>${fmtUsd(fibExt(1.618))}</b>(同 $2.09 と一致)。この2つが独立に一致しているのは信頼できる根拠。`,
       ],
-      use: '第1〜4段の指値価格そのもの。ラダーの価格帯はこの足の構造から引いている。',
+      use: '第3〜6段の指値価格そのもの。ラダーの価格帯はこの足の構造から引いている。',
     },
     {
       tf: '4時間足', en: '4-HOUR', tier: 'warn', role: '指値の置き直しと、1段を刻む単位',
       watch: '4H EMA20/50／押し安値の切り上げ・切り下げ／出来高',
-      now: '$1.45〜$1.54 のレンジで直近の上昇を消化中。方向感は日足に従属しており、この足単独では強弱を判定しない。',
+      now: '高値 $1.69 から 18% の巻き戻し局面で、<b>安値の切り下げが継続中</b>。ルールどおり、いまは指値を1段下げて下ヒゲ＋出来高増を待つ場面。',
       rules: [
         '日足の指値帯に到達しても<b>即全量ではない</b>。4Hで下ヒゲ＋出来高増を確認してから残りを入れる。',
         '4Hが安値の切り下げを続けている間は、その段の指値を1段下げる。<b>落ちるナイフは掴まない</b>。',
         '4H終値で EMA20 を回復したら、その段は「約定させに行く」モードへ切り替える。',
         '<b>この足で方針は変えない</b>。変えるのは執行の刻みだけ。',
       ],
-      use: '第2〜4段の1段分を、2〜3回に分けて入れるときの区切り。',
+      use: '第3〜5段の1段分を、2〜3回に分けて入れるときの区切り。',
     },
     {
-      tf: '1時間足', en: 'HOURLY', tier: 'warn', role: '執行のみ ― 方針判断には一切使わない',
-      watch: '直近1〜2本の高値・安値／VWAP／板の厚み',
-      now: '方針判断には使わない足。ここでの唯一の目的は、同じ数量をより安く取ることに尽きる。',
+      tf: '1時間足', en: 'HOURLY', tier: 'good', role: '執行のみ ― 方針判断には一切使わない',
+      watch: '直近1〜2本の高値・安値／VWAP／板の厚み／メイカーかテイカーか',
+      now: '<b>ルールが機能した領域。</b> 8/23 の成行(taker)では手数料 ¥+239.72 を払ったが、8/25 以降は指値(maker)に切り替わり、¥800,000 枠の手数料は差し引き <b>¥-19.21</b>(受け取り)になっている。この執行を維持する。',
       rules: [
         '<b>成行を使わない。</b> 8/23 22:39 の買い直しは1時間足の高値圏での成行で、売却の加重平均 ¥227.91 に対し ¥240.88 を払った(+¥12.97/枚・829枚で <b>¥10,754</b>)。この足の役割はそのコストを削ることにある。',
         '1段の金額を1時間足の単位で2〜3回に分けて指値。1本の陽線に全額をぶつけない。',
@@ -1613,6 +1635,35 @@
     const needQty = Math.max(H.prevQty - H.xrp, 0);
     const breakEven = needQty ? usd(H.cashJpy) / needQty : null;
 
+    // 執行済み
+    const dq = H.executed ? H.executed.reduce((a,b)=> a + b.qty, 0) : 0;
+    const dv = H.executed ? H.executed.reduce((a,b)=> a + b.qty * b.jpy, 0) : 0;
+    const df = H.executed ? H.executed.reduce((a,b)=> a + b.fee, 0) : 0;
+    const pq = H.executed ? H.executed.filter(x=> x.inPlan).reduce((a,b)=> a + b.qty, 0) : 0;
+    const pv = H.executed ? H.executed.filter(x=> x.inPlan).reduce((a,b)=> a + b.qty * b.jpy, 0) : 0;
+    const pf = H.executed ? H.executed.filter(x=> x.inPlan).reduce((a,b)=> a + b.fee, 0) : 0;
+    if (H.executed && document.getElementById('buyDoneBody')) {
+      const dr = H.executed.map(e=> `<tr>
+        <td><b class="mono tnum">${e.date}</b></td>
+        <td class="num">${fmtXrp(e.qty)}</td>
+        <td class="num">${fmtJpy(e.jpy)}<span class="mult">${fmtUsd(e.jpy / fx)}</span></td>
+        <td class="num">${fmtJpy(e.qty * e.jpy)}</td>
+        <td class="num">${e.mt === 'maker' ? '<b>maker</b>' : 'taker'}</td>
+        <td class="num">${e.fee < 0 ? '<b>' + fmtJpy(e.fee) + '</b>' : fmtJpy(e.fee)}</td>
+        <td style="white-space:normal">${e.note}</td>
+      </tr>`);
+      dr.push(`<tr class="is-core">
+        <td>合計</td><td class="num"><b>${fmtXrp(dq)}</b></td>
+        <td class="num"><b>${fmtJpy(dv / dq)}</b></td><td class="num"><b>${fmtJpy(dv)}</b></td>
+        <td class="num">―</td><td class="num">${fmtJpy(df)}</td>
+        <td style="white-space:normal">うち ¥800,000 枠からの執行は ${fmtXrp(pq)} / ${fmtJpy(pv)}(平均 <b class="mono tnum">${fmtJpy(pv / pq)}</b>)、手数料は <b>${fmtJpy(pf)}</b> でネットのリベート受取</td>
+      </tr>`);
+      document.getElementById('buyDoneBody').innerHTML = dr.join('');
+    }
+    const cap = document.getElementById('buyCashCap');
+    if (cap) cap.textContent = `残り現金 ${fmtJpy(H.cashJpy)} の配分`;
+
+    const no = H.ladderNo || 0;
     let qty = H.xrp, cost = H.xrp * (H.avgCost || px), spent = 0;
     const rows = H.buyLadder.map((step, i)=>{
       const mid = (step.lo + step.hi) / 2;
@@ -1620,7 +1671,7 @@
       qty += got; cost += usd(step.jpy); spent += step.jpy;
       const avg = cost / qty;
       return `<tr${step.cond ? ' class="is-core"' : ''}>
-        <td><b class="mono tnum">第${i + 1}段</b>${step.cond ? '<span class="mult">条件付</span>' : ''}</td>
+        <td><b class="mono tnum">第${i + 1 + no}段</b>${step.cond ? '<span class="mult">条件付</span>' : ''}</td>
         <td class="num">${fmtJpy(step.jpy)}<span class="mult">${Math.round(step.jpy / H.cashJpy * 100)}%</span></td>
         <td class="num">${fmtUsd(step.lo)}〜${fmtUsd(step.hi)}<span class="mult">${fmtJpy(jpy(step.lo))}〜${fmtJpy(jpy(step.hi))}</span></td>
         <td class="num">${fmtXrp(got)}</td>
@@ -1653,11 +1704,14 @@
               : `<b>この線より上</b>。枚数の回復が難しくなる水準に入っている。`);
 
     document.getElementById('buyNote').innerHTML =
-      `<strong style="color:var(--text)">第1段を今日置く理由: </strong>` +
-      `日足RSIは82.9で明確な買われすぎ、$1.65〜$1.70では実際に跳ね返されている。一方でホワイトハウス会合(8/19)・` +
-      `ETF週間流入の反転(+$39.78M)・財務省の長期債買い戻し倍増(9/9発効)・CLARITY Act採決(9/15)と、触媒は改善方向にある。` +
-      `テクニカルは「分割しろ」と言い、ファンダは「遅れるな」と言う。両方を満たせるのが買い戻しラインの内側という条件で、` +
-      `第1段の${Math.round(H.buyLadder[0].jpy / H.cashJpy * 100)}%は利益を狙う枠ではなく<b>取り逃しを防ぐ保険料</b>として置く。` +
+      `<strong style="color:var(--text)">進捗: </strong>` +
+      `¥800,000 のうち <b>${fmtJpy(pv)}(${Math.round(pv / (pv + H.cashJpy) * 100)}%)</b> を執行済み。` +
+      `${fmtXrp(pq)}を平均 <b>${fmtJpy(pv / pq)}</b> で取得しており、これは全量売却時の加重平均 ¥227.91 と実質同値。` +
+      `つまり ¥227.91 で降りた判断は、ここまでは枚数を減らさずに戻せている。残り ${fmtJpy(H.cashJpy)}。` +
+      `<br><br><strong style="color:var(--text)">執行品質が改善している: </strong>` +
+      `8/23 の買い直しは高値圏の成行(taker)で手数料 ¥+239.72 を払ったが、8/25 以降は指値(maker)に切り替わり手数料がリベートに転じた。` +
+      `¥800,000 枠の手数料は差し引き <b>${fmtJpy(pf)}</b> で、支払いではなく受け取りになっている。` +
+      `1時間足の「成行を使わない」ルールが実際に効いた部分であり、この執行を維持すること。` +
       `<br><br><strong style="color:var(--text)">エスカレーション条項: </strong>${H.escalation}` +
       `<br><br><strong style="color:var(--text)">留意: </strong>` +
       `加重平均 ¥227.91 での全量売却(${fmtXrp(H.sold2026.qty)}・¥${H.sold2026.proceedsJpy.toLocaleString('en-US')})は2026年の課税イベント(雑所得・総合課税、納税は2027年3月)。` +
@@ -1665,7 +1719,7 @@
       `総平均法で計算した2026年の実現損益は概ね<b>¥2,000〜¥21,000</b>、税額は¥400〜¥6,400程度。` +
       `古い保有分の取得原価を¥0と置いた最悪ケースでも実現損益は<b>¥59,353</b>・税額¥18,055が上限で、` +
       `2025年の購入額¥270,777が年初原価の下限を作るためこれ以上は増えない。` +
-      `よって¥800,000は納税準備金を差し引かずに全額を投資枠として扱える。` +
+      `よって現金は納税準備金を差し引かずに全額を投資枠として扱える。` +
       `(2026年初の在庫データが未取得のため確定値ではない。年内の追加購入も年間平均単価を通じて損益を動かすが、影響は±¥2万程度で投資判断を左右しない。)` +
       `数量・価格は目安であり、執行判断は常に自己責任で行うこと。`;
   }
