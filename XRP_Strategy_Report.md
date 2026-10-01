@@ -170,7 +170,7 @@
 
 | イベント / 材料 | 影響度スコア | 方向 | ステータス | 補足 |
 |---|---|---|---|---|
-| CLARITY Act(米国市場構造法案)の可決可否 | **76** | − (finance.yahoo.com、coindesk.com、9/26) | 複数の相場データソースは9/26時点、9/15のクローチャー採決不成立(49対50)以降、上院・下院いずれも今会期中の再審議日程を組んでおらず、超党派合意なしの成立は2027年以降にずれ込む公算が大きいと報じた。予測市場Kalshi調べの『2027年1月1日までの成立確率』は約20%、Polymarket調べの『2026年中成立確率』は10%台にとどまる(kalshi.com、polymarket.com、9/26時点)。XRPはSEC・CFTCの『デジタルコモディティ』分類を法案の帰趨とは別に維持している。 | 9/15のクローチャー採決は49対50で不成立に終わり、2026年中の市場構造法案成立はほぼ絶望的に。Tillis議員の再考動議はあるが上院日程は中間選挙前の予算・歳出協議に占有されるため実質的な再挑戦は2027年以降にずれ込む公算が大きい(npr.org、9/15)。 |
+| CLARITY Act(米国市場構造法案)の可決可否 | **74** | − (coingape.com、9/30) | coingape.com・bitcoinethereumnews.comは9/30、9/15のクローチャー採決不成立(49対50)以降、議会での再審議日程なしのまま、SEC・CFTCが『議会を待つのは終わり』として少なくとも9件の規制措置(トークン分類・Innovation Exemption等)を独自に進めていると報道、法案の行方とは別に当局主導の規制明確化が進展していると伝えた(coingape.com、9/30)。予測市場Kalshi調べの『2027年1月1日までの成立確率』は約20%、Polymarket調べの『2026年中成立確率』は10%台にとどまる(kalshi.com、polymarket.com、9/26時点)。XRPはSEC・CFTCの『デジタルコモディティ』分類を法案の帰趨とは別に維持している。 | 9/15のクローチャー採決は49対50で不成立に終わり、2026年中の市場構造法案成立はほぼ絶望的に。一方でSEC・CFTCが議会を待たず独自の規制整備を進めており、規制の不確実性そのものはやや後退しつつある(coingape.com、9/30)。 |
 | マクロ環境(PCEインフレ指標・FRB金利観測・BTC相場全体) | **48** | + (kucoin.com、coingape.com、9/30) | kucoin.com・coingape.comは9/30、米8月PCE価格指数がコア+3.0%・総合+3.4%(いずれも市場予想を下回る)と発表されたことを受けBTCが一時$85,500超まで急伸、XRPも連れ高したと報道。coindesk.com・crypto-economy.comは同日、市場予想を下回るPCE統計を受けCME FedWatch調べの10月FOMC利上げ確率が低下しリスクオン地合いが強まったと報道(coindesk.com、crypto-economy.com、9/30)。 | BTCの急伸は短命で上げ幅を大半戻しており、24/7 Wall St.が9/29に報じた10/28 FOMC利上げ確率(約64%)自体はなお高水準で金利面の逆風が完全に解消したわけではない点には留意(247wallst.com、9/29)。 |
 | テクニカル(短期トレンド・移動平均) | **52** | + (thecryptobasic.com、coingape.com、altindex.com、9/30) | thecryptobasic.comは9/30、XRPの直近支持は$1.45〜$1.47帯(9/24安値・9/28〜29安値を含む)、これを日足終値で割り込めば$1.37〜$1.41帯が再び視野に入る一方、上値回復には$1.53〜$1.56帯の奪回が必要で、これを上抜け・維持できれば9月のレジスタンス帯$1.61〜$1.66への上昇を支えると分析。coingape.comは同日、Evernorth/Armada合併承認とPCE統計の下振れを受けXRPが採決前の$1.47割れから約1.89%高の$1.51まで切り返したと報道、直近支持圏を防衛した(coingape.com、9/30)。altindex.comは日足RSI(14)が56.2で中立〜やや強気圏、過熱感はなく方向感を欠く「カタリスト待ち」の状態と分析(thecryptobasic.com、altindex.com、9/30)。 | $1.45〜$1.47(直近支持)の需要ゾーン死守が短期の分岐点であることに変わりはない。 |
 | レバレッジ清算・フラッシュクラッシュのリスク | **70** | − (coindesk.com、forexcrunch.com、9/26〜28) | thecurrencyanalytics.com・coindesk.comは9/25〜26、Bitgetがオンチェーン追跡調査でZEC・TRX資産の被害が追加判明したことを受けハッキング被害総額を当初の$351.6Mから$387.5Mへ上方修正、2026年最大規模の暗号資産盗難事件になったと報道。盗難XRP(当初約$157M相当)のうち約$83Mが3つの保有ウォレットから移動され、残る約$75M相当もXRPレジャーの仕組み上凍結できない状態にあると伝えた。forexcrunch.comは9/28、Bitgetが同日08:00(UTC)のBTC出金再開を皮切りに9/29 ETH・9/30 USDT・10/2にその他資産を含め段階的に入出金を再開する計画と報道、被害はユーザー保護基金で全額カバーし顧客残高に影響はないと伝えた(thecurrencyanalytics.com、coindesk.com、forexcrunch.com、panews.io、9/25〜28)。これとは別に、blockhead.co・tradingview.com・thecryptobasic.comは9/17〜23、D'CENTのアプリウォレット(v8.1.0未満)の脆弱性を突いた10日間の攻撃(9/15〜25)で約1,170万〜1,240万XRP(約$20M相当)が6,000超のウォレットから盗まれたと報道、THORChain経由でETHへ交換の上取引所へ送られたと伝えた(blockhead.co、tradingview.com、thecryptobasic.com、9/17〜23)。 | Bitgetは段階的な出金再開を進めているが、凍結不能な約$75M相当のXRPは依然ハッカーの手元にあり資産構造上のリスクは残る。 |
@@ -2257,6 +2257,11 @@ XRPの将来性を単独で語るのではなく、時価総額上位の主要�
 **日本語訳(要約)**: 「Ripple支援のt54 Labsは、XRPレジャー上のAIエージェント決済規格『x402』の累計決済件数が1,000万件を突破したと発表。公開から3ヶ月弱での到達となった」
 **解説**: theblock.co・coingape.comは10/1、t54 LabsのXRPL AI Hubデータとして全期間の決済件数が約1,090万件(XRP建て約6,610件・RLUSD建て約9,870件)、登録マーチャント161件に達し1日あたり60万件超が決済されていると報道、関係者は今後1億件到達も視野に入ると述べたと伝えた(theblock.co、coingape.com、10/1)。
 出典: [The Block](https://www.theblock.co/post/408987/ripplex-sees-xrp-ledger-agentic-transactions-hitting-10-million-mark-soon)
+
+### 6-364. It's Over for Waiting on Congress: SEC and CFTC Make 9 Moves to Write Crypto Rules Without the CLARITY Act(2026/9/30, CoinGape)
+**日本語訳(要約)**: 「CLARITY Actは9/15の上院クローチャー採決で49対50に終わり不成立となったが、SECとCFTCは議会を待たず、トークン分類やInnovation Exemption(トークン化証券向けの5年間の条件付き適用除外)など、少なくとも9件の規制措置を独自に進めている」
+**解説**: coingape.com・bitcoinethereumnews.comは9/30、SEC・CFTC共同のトークン・タクソノミー(3月にBTC・ETH・XRP・SOL・DOGEをデジタルコモディティに分類)を皮切りに、9/17にSECがトークン化証券取引所向けのInnovation Exemptionを発表、同日CFTCも証券ブローカー登録なしでの暗号資産取引ツール開発を認める措置を講じたと報道、議会の立法を待たない規制当局主導の明確化が加速していると伝えた(coingape.com、9/30)。
+出典: [CoinGape](https://coingape.com/its-over-for-waiting-on-congress-sec-and-cftc-make-9-moves-to-write-crypto-rules-without-the-clarity-act/)
 
 ---
 
