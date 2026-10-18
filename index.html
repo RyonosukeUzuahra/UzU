@@ -1066,7 +1066,10 @@
     {date:"2026-10-13", src:"TokenPost", sentiment:"up", quote:"米国のXRP現物ETFは週間で$11.31Mの純流入を記録し、13週連続のプラスフローを継続している。", note:"tokenpost.comは10月中旬、米XRP現物ETFが週間(10/5〜9)で$11.31Mの純流入を記録、Bitwiseが$10.55Mを主導し13週連続の流入streakを継続したと報道。同期間、BTC・ETH・SOLの現物ETFは合計で流出となったと伝えている(tokenpost.com、10月中旬)。", link:"https://www.tokenpost.com/news/investing/31811"},
     {date:"2026-10-12", src:"KuCoin", sentiment:"down", quote:"米国のSolana現物ETFは6営業日連続の資金流出を記録し、直近5日間の流出額は$16.5Mに達した。", note:"kucoin.comは10/12、米Solana現物ETFが6営業日連続の流出(直近5日間で$16.5M)を記録、10/5〜9週は$24.8Mの流出となり14週連続の流入streakが途絶えたと報道、累計流入は約$1.574B(10/12時点)としている(kucoin.com、10/12)。", link:"https://www.kucoin.com/news/flash/bitcoin-ethereum-and-solana-etfs-record-net-outflows-in-october"},
     {date:"2026-09-30", src:"Mudrex", sentiment:"neutral", quote:"XRPは200日移動平均線付近の$1.28を主要な長期サポートとして保っている。", note:"mudrex.comは9/30、XRPが$1.50前後でレンジ内に収まり50日・200日移動平均線をいずれも上回っているものの、MACDは平坦化していると分析。主要サポートを200日平均線付近の$1.28、レジスタンスを$1.54〜$1.55とした。現在はこの200日平均線付近まで値を下げている(mudrex.com、9/30)。", link:"https://mudrex.com/learn/xrp-technical-analysis/"},
-  ];const newsList = document.getElementById('newsList');
+  ];
+  document.getElementById('newsCount').textContent = news.length;
+  const sentimentMeta = { up: {label:"強気", cls:"up"}, neutral: {label:"中立", cls:"neutral"}, down: {label:"弱気", cls:"down"} };
+  const newsList = document.getElementById('newsList');
   const newsSorted = [...news].sort(byFreshness); // 新しい順を保証する(元配列の並びは不定)
   newsSorted.forEach(n=>{
     const item = document.createElement('a');
