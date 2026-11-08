@@ -109,6 +109,21 @@
   .item.open .x { -webkit-line-clamp: unset; display: block; }
   .item .x a { white-space: nowrap; }
 
+  /* AIの見立て */
+  .views { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .view { border: 1px solid var(--border); border-radius: 6px; padding: 12px; min-width: 0; }
+  .view-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .view-name { font-family: var(--mono); font-weight: 700; font-size: 13px; }
+  .view-at { font-family: var(--mono); font-size: 11px; color: var(--text-faint); margin-left: auto; white-space: nowrap; }
+  .view-at.old { color: var(--warn); }
+  .view-head { font-weight: 700; font-size: 14.5px; line-height: 1.5; }
+  .view ul { margin: 6px 0 0; padding-left: 1.1em; font-size: 13px; color: var(--text-muted); }
+  .view li { margin: 2px 0; }
+  .view-risk { margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+  .view-risk b { color: var(--warn); font-weight: 600; }
+  .view-empty { font-size: 13px; color: var(--text-faint); }
+  .views-diff { margin-top: 10px; font-size: 12.5px; color: var(--text-muted); }
+
   details.more { margin-top: 4px; }
   details.more > summary { list-style: none; cursor: pointer; text-align: center; font-family: var(--mono); font-size: 13px; padding: 12px; border: 1px dashed var(--border); border-radius: 8px; color: var(--text-muted); }
   details.more > summary::-webkit-details-marker { display: none; }
@@ -131,6 +146,7 @@
     .chips { margin-left: 0; width: 100%; }
     .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .lines .k { flex-basis: 6.5em; }
+    .views { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -163,6 +179,12 @@
   <section class="card" aria-labelledby="h-points">
     <h2 id="h-points">今日の要点</h2>
     <div id="points"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-views">
+    <h2 id="h-views">AIの見立て</h2>
+    <div class="views" id="views"></div>
+    <div class="views-diff" id="viewsDiff" hidden></div>
   </section>
 
   <details class="more">
@@ -201,6 +223,17 @@
   const MARKET = { price: 1.16, chg24h: null, chg7d: null };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
   const STANCE = "暗号資産市場は小幅な範囲内の推移が続く。BTCは$74,800〜$76,200前後・XRPは$1.15〜$1.18前後で推移。247wallst.comは米ビットコインETFの週間$1.3B流出とXRP ETFの4営業日連続ゼロ流入を報道、CLARITY Actの停滞にも変化はない。総合スタンスは「警戒下での計画継続」を維持する(247wallst.com、複数データソース照会、11/8 09:00)。";
+  // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
+  const CLAUDE_VIEW = {
+    at: "2026-11-08 15:30", stance: "neutral",
+    head: "$1.15〜1.24の買い候補ゾーンに入ったが、下げの勢いはまだ止まっていない。急いで買い増す場面ではない",
+    reasons: [
+      "移動平均をすべて下回ったままで、戻りは毎回売られている",
+      "現物ETFへの資金流入が4営業日続けてゼロで、買い手が戻っていない",
+      "一方で大口は週に約6,000万XRPを積み増しており、投げ売り一色ではない",
+    ],
+    risk: "警戒ライン$1.10まで約5%。日足の終値で割れたら、第6段を待つか計画を見直す",
+  };
   // 今週の重要イベント。新しい順に最大5件
   const EVENTS = [
     {"date":"2026-11-08","text":"247wallst.comは米ビットコイン現物ETFが週間で約$1.3B流出、XRP現物ETFも11/3〜11/6の4営業日連続で資金流入ゼロを記録したと報道(247wallst.com、11/8 09:00)"},
@@ -454,6 +487,38 @@
     }).join('');
   }
 
+  // ---- AIの見立て(Claude は DATA、Codex は毎朝 PC が書く codex.json) ----
+  const VIEW_STANCE = { up: ['good', '強気'], neutral: ['warn', '中立'], down: ['bad', '弱気'] };
+  let codexView = null, codexState = 'loading';
+  const validView = v => v && typeof v === 'object' && typeof v.head === 'string' && v.head.trim();
+  function viewHtml(name, v, emptyMsg){
+    if (!validView(v)) return `<div class="view"><div class="view-top"><span class="view-name">${name}</span></div><div class="view-empty">${emptyMsg}</div></div>`;
+    const [t, label] = VIEW_STANCE[v.stance] || VIEW_STANCE.neutral;
+    const at = String(v.at || ''), day = at.slice(0, 10);
+    const age = /^\d{4}-\d{2}-\d{2}$/.test(day) ? dayNum(new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })) - dayNum(day) : null;
+    const old = age != null && age >= 3;
+    const reasons = (Array.isArray(v.reasons) ? v.reasons : []).filter(r => typeof r === 'string' && r.trim()).slice(0, 3);
+    return `<div class="view"><div class="view-top"><span class="view-name">${name}</span><span class="chip ${t}">${label}</span>` +
+      `<span class="view-at${old ? ' old' : ''}">${esc(dateLabel(day))}${/\d{2}:\d{2}/.test(at) ? ' ' + esc(at.slice(11, 16)) : ''}${old ? ' 古い' : ''}</span></div>` +
+      `<div class="view-head">${esc(v.head)}</div>` +
+      (reasons.length ? `<ul>${reasons.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : '') +
+      (v.risk ? `<div class="view-risk"><b>注意</b> ${esc(v.risk)}</div>` : '') + `</div>`;
+  }
+  function renderViews(){
+    const cMsg = codexState === 'loading' ? '読み込み中…' : 'まだありません（毎朝 9:30 ごろ、PC が起動していれば更新されます）';
+    $('views').innerHTML = viewHtml('Claude', CLAUDE_VIEW, 'まだありません') + viewHtml('Codex', codexView, cMsg);
+    const a = validView(CLAUDE_VIEW) && CLAUDE_VIEW.stance, b = validView(codexView) && codexView.stance;
+    const diff = a && b && VIEW_STANCE[a] && VIEW_STANCE[b] && a !== b;
+    $('viewsDiff').hidden = !diff;
+    if (diff) $('viewsDiff').textContent = `意見が分かれています（Claude ${VIEW_STANCE[a][1]}・Codex ${VIEW_STANCE[b][1]}）。理由を見比べてください。`;
+  }
+  async function loadCodex(){
+    try { const v = await getJSON('codex.json?t=' + Date.now()); codexView = validView(v) ? v : null; }
+    catch (e) { codexView = null; }
+    codexState = 'done';
+    renderViews();
+  }
+
   function renderHoldDetail(){
     const fx = fxNow();
     let html = '';
@@ -525,6 +590,8 @@
 
   renderLists();
   renderAll();
+  renderViews();
+  loadCodex();
   $('refresh').addEventListener('click', fetchLive);
   fetchLive();
 })();
