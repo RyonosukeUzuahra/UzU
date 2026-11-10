@@ -218,21 +218,21 @@
 (function(){
   // ===== DATA: 日次ルーティンが書き換えるのはこのブロックだけ =====
   // 文章は毎回「置き換え」る。日時の見出しを付けて前回分に書き足さない。
-  const UPDATED = "2026-11-10 09:15";   // JST
+  const UPDATED = "2026-11-10 20:15";   // JST
   // ライブ取得(CoinGecko)に失敗したときだけ使う値
-  const MARKET = { price: 1.09, chg24h: null, chg7d: null };
+  const MARKET = { price: 1.08, chg24h: null, chg7d: null };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
-  const STANCE = "XRPは$1.07の安値から$1.09付近へ小幅反発、本日22:30の米CPIが次の動きの鍵。支持$1.00〜1.07、新規買い増しは見送り継続。";
+  const STANCE = "XRPは$1.08前後で推移、22:30の米CPI発表が数時間後に迫る。BTCも$74,750付近まで続落、支持$1.00〜1.07、新規買い増しは見送り継続。";
   // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
   const CLAUDE_VIEW = {
-    at: "2026-11-10 09:15", stance: "down",
-    head: "本日の米CPI発表が最大の注目点、$1.07安値からの反発は限定的でトレンドは依然軟調",
+    at: "2026-11-10 20:15", stance: "down",
+    head: "22:30のCPI発表が最大の焦点、BTCは$74,750付近まで軟化しXRPも$1.08で追随安",
     reasons: [
-      "本日22:30 JSTに米10月CPI発表、FRB12月観測を左右するボラティリティ要因",
-      "ETFフローは停滞継続、新規需要の裏付けは依然乏しい",
-      "CLARITY Actは9月の採決否決から進展なく規制明確化は不透明なまま",
+      "米10月CPI発表は22:30 JST予定、FRB12月利上げ観測(約77%)を左右",
+      "BTCは月初$81,195付近から$74,750付近まで続落、リスクオフ継続中",
+      "ETFフローは停滞、CLARITY Actも進展なく需給改善の材料は乏しい",
     ],
-    risk: "CPI上振れでFRB利上げ観測が強まれば支持$1.00〜1.07を割り$0.90を試すリスク",
+    risk: "CPI上振れでFRB利上げ観測が一段と強まれば支持$1.00〜1.07を割り$0.90を試すリスク",
   };
   // 今週の重要イベント。新しい順に最大5件
   const EVENTS = [
@@ -247,7 +247,7 @@
     {"date":"2026-11-09","tier":"warn","t":"Binance推定$58億〜$60億規模のハッキング疑惑による暗号資産市場全体の急落(史上最大規模の可能性)","s":25,"d":"down","status":"ハッカーが窃取資金の一部(XRP約1.39億枚・約$1.5億相当)を木曜以降に移動したと報道、現時点で取引所への着金は未確認(99bitcoins.com、複数データソース照会、11/9)。","desc":"XRP固有の脆弱性ではなく、Binanceという特定の中央集権型取引所の鍵管理・コールドウォレット運用に起因する事件とみられ、XRPレジャー自体のプロトコルは侵害されていない。ただし業界最大手取引所での大規模流出は暗号資産全体のカウンターパーティリスク・取引所経由保有のリスクを再認識させる材料であり、短期的な価格・流動性への影響(出金停止によるXRPの取引所間アービトラージ阻害、ホエールの取引所離れ加速など)は無視できない。被害総額・Binanceの補償能力・SAFU基金の対応次第で、市場の受け止めは大きく変わる可能性がある。"},
     {"date":"2026-11-08","tier":"warn","t":"地政学リスク(イラン・ホルムズ海峡タンカー攻撃)による暗号資産市場全体の急落","s":55,"d":"down","status":"新規の確度の高い進展は確認されていない。地政学リスクによる逆風継続の位置づけに変化はない(複数データソース照会、11/8 09:00)。"},
     {"date":"2026-11-08","tier":"bad","t":"CLARITY Act(米国市場構造法案)の可決可否","s":84,"d":"down","status":"上院採決は行われておらず、Kalshi調べの成立確率は2027年までで約6%のまま変化はない(複数データソース照会、11/8 09:00)。"},
-    {"date":"2026-11-10","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":64,"d":"down","status":"米CPI(10月分)の発表が11/10 22:30 JSTに予定され、FRB12月利上げ観測への影響が注視されている(複数データソース照会、11/10)。"},
+    {"date":"2026-11-10","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":64,"d":"down","status":"米CPI(10月分)発表が11/10 22:30 JSTに予定される中、BTCは月初の$81,195付近から$74,750付近まで続落、FRB12月利上げ観測は約77%まで上昇(coindesk.com、複数データソース照会、11/10)。"},
     {"date":"2026-11-10","tier":"bad","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":66,"d":"down","status":"XRPは$1.07の安値から$1.09付近へ小幅反発したが続落トレンドは継続、支持$1.00〜1.07が防衛ライン。Fear&Greed指数はFearゾーンのまま(複数データソース照会、11/10)。"},
     {"date":"2026-11-08","tier":"bad","t":"レバレッジ清算・フラッシュクラッシュのリスク","s":68,"d":"down","status":"11/8にXRPロング清算が約$39M発生(ショート清算はわずか$366K)、ロング偏重のポジション解消が続きボラティリティの高い状態が継続(CoinGlass、複数データソース照会、11/10)。"},
     {"date":"2026-11-09","tier":"warn","t":"ホエール(大口保有者)の動向:ミリオネアウォレット減少・取引所残高増加で分配シグナル","s":45,"d":"down","status":"大口が約6.9億XRP(約$9億相当)をBinanceへ移動との報道、取引所流入の増加が目立ち売り圧の警戒材料に(altcoinbuzz.io、複数データソース照会、11/9)。"},
@@ -277,16 +277,16 @@
   ];
   // 海外メディア。新しい順に最大10件、リンクは実在するものだけ
   const news = [
+    {"date":"2026-11-10","src":"CoinDesk","sentiment":"down","quote":"FRB利上げ観測が強まり、ビットコインがCPI発表前に軟化。","note":"coindesk.comは11/10、FRBの12月利上げ観測(市場予想で約77%)が強まる中、ビットコインが米CPI発表を控えて下落したと報道した(coindesk.com、11/10)。","link":"https://www.coindesk.com/markets/2026/11/10/bitcoin-slips-before-u-s-inflation-report-as-traders-price-in-fed-rate-increase"},
+    {"date":"2026-11-10","src":"CoinDesk","sentiment":"neutral","quote":"CPI試練を控えるビットコイン、インフレ緩和だけでは不十分とアナリスト。","note":"coindesk.comは11/10、米CPI発表を控えアナリストがインフレ緩和だけでは市場回復の材料として不十分と警告していると報道した(coindesk.com、11/10)。","link":"https://www.coindesk.com/markets/2026/11/10/bitcoin-faces-u-s-cpi-test-as-analysts-warn-inflation-relief-may-not-be-enough"},
+    {"date":"2026-11-10","src":"FXStreet","sentiment":"down","quote":"CPI発表を控え、ビットコイン・イーサリアム・XRPが揃って続落。","note":"fxstreet.comは11/10、米CPI発表を控えビットコイン・イーサリアム・XRPが揃って続落したと報道した(fxstreet.com、11/10)。","link":"https://www.fxstreet.com/cryptocurrencies/news/crypto-today-bitcoin-ethereum-xrp-extend-decline-with-us-cpi-in-focus-202611101032"},
+    {"date":"2026-11-10","src":"Analytics Insight","sentiment":"down","quote":"ビットコインは$74,750近辺、ZcashとXRPが下落をリード。","note":"analyticsinsight.netは11/10、ビットコインが$74,750付近で推移する中、ZcashとXRPが下落をリードしたと報道した(analyticsinsight.net、11/10)。","link":"https://www.analyticsinsight.net/price-analysis/crypto-prices-today-bitcoin-holds-near-usd-74750-as-zcash-and-xrp-lead-declines"},
     {"date":"2026-11-10","src":"KuCoin","sentiment":"down","quote":"米CPI発表を前に、XRPは$1.09まで下落。","note":"kucoin.comは11/10、米10月CPI発表を前にXRPが$1.09付近まで下落したと報道、結果次第で短期ボラティリティが高まるとの見方を伝えた(kucoin.com、11/10)。","link":"https://www.kucoin.com/news/flash/xrp-price-drops-toward-1-09-ahead-of-us-inflation-data"},
     {"date":"2026-11-09","src":"BeInCrypto","sentiment":"down","quote":"$40M規模のフラッシュ清算後、XRPに新たな下振れリスク。","note":"beincrypto.comは、11月に発生した約$40M規模のロング清算を受け、XRPがさらなる下振れリスクに直面していると報道した(beincrypto.com)。","link":"https://beincrypto.com/xrp-price-risk-40-million-liquidation-november-2026/"},
     {"date":"2026-11-09","src":"24/7 Wall St.","sentiment":"down","quote":"XRPが$1.07まで下落、8月以来の安値。$1の支持は今回も持つか。","note":"247wallst.comは11/9、XRPが8月以来の安値となる$1.07まで下落したと報道、$1.00の心理的節目を守れるかが当面の焦点になっていると伝えた(247wallst.com、11/9)。","link":"https://247wallst.com/investing/cryptocurrency/2026/11/09/xrp-fell-to-1-07-its-lowest-since-august-will-the-1-support-hold-this-time/"},
     {"date":"2026-11-09","src":"The Crypto Basic","sentiment":"down","quote":"XRPが最後の防衛ゾーンへ、すべては$1.07の水準次第。","note":"thecryptobasic.comは11/9、XRPが$1.07付近の最後の主要な防衛ゾーンに達したと報道、この水準を割れば次の支持は$1.00・$0.90圏になると分析した(thecryptobasic.com、11/9)。","link":"https://thecryptobasic.com/2026/11/09/xrp-hits-its-final-support-zone-everything-hinges-on-the-1-07-level/"},
     {"date":"2026-11-09","src":"AltcoinBuzz","sentiment":"down","quote":"大口が約6.9億XRP(約$9億相当)をBinanceへ移動、価格は$1.08に急落。","note":"altcoinbuzz.ioは11/9、CryptoQuant調べのデータとして大口が約6.9億XRP(約$9億相当)をBinanceへ移動したと報道、取引所流入の増加は売り圧の前触れになりうると伝えた(altcoinbuzz.io、11/9)。","link":"https://altcoinbuzz.io/xrp-whales-move-900-million-to-binance-as-price-crashes-to-1-08"},
     {"date":"2026-11-09","src":"99Bitcoins","sentiment":"down","quote":"XRPが$1に接近、Binanceハッカーが窃取XRP1.39億枚を移動。","note":"99bitcoins.comは11/9、Binanceハッキング事件の実行者が木曜以降に窃取XRP約1.39億枚(約$1.5億相当)をウォレット間で移動したと報道、取引所への着金は確認されていないと伝えた(99bitcoins.com、11/9)。","link":"https://99bitcoins.com/news/altcoins/xrp-price-nears-1-as-binance-hacker-moves-139m-xrp-are-new-lows-next/"},
-    {"date":"2026-11-09","src":"FXStreet","sentiment":"down","quote":"ビットコイン・イーサリアム・XRPが揃って続落、売り圧が強まる。","note":"fxstreet.comは11/9、暗号資産市場全体で売り圧が強まりビットコイン・イーサリアム・リップル(XRP)が揃って下落トレンドを延長したと報道した(fxstreet.com、11/9)。","link":"https://www.fxstreet.com/cryptocurrencies/news/crypto-today-bitcoin-ethereum-and-ripple-extend-downtrend-as-selling-pressure-mounts-202611091036"},
-    {"date":"2026-11-09","src":"FXStreet","sentiment":"down","quote":"弱気派が$1を狙う展開、XRPはさらなる下落リスクに直面。","note":"fxstreet.comは11/9、テクニカル面で弱気派が$1.00の節目を試す展開を狙う中、XRPがさらなる下落リスクに直面していると分析した(fxstreet.com、11/9)。","link":"https://www.fxstreet.com/cryptocurrencies/news/ripple-price-forecast-xrp-risks-further-losses-as-bears-eye-1-202611090742"},
-    {"date":"2026-11-09","src":"CoinJournal","sentiment":"down","quote":"ETF資金流出が続く中、XRPは$1へ向かうのか。","note":"coinjournal.netは、米現物XRP ETFからの資金流出が続く中でXRPが$1.00の節目に向かうリスクを分析した(coinjournal.net)。","link":"https://coinjournal.net/news/is-xrp-heading-towards-1-amid-persistent-etf-outflows/"},
-    {"date":"2026-11-09","src":"Bitcoin.com","sentiment":"neutral","quote":"米ETF、11/3〜6はネットフローほぼゼロ。Canaryは$529,500流出。","note":"news.bitcoin.comは、米現物XRP ETFが11/3〜11/6の間ネットフローがほぼゼロで推移し、唯一動いたCanaryのXRPC は11/2に$529,500の流出を記録したと報道した(news.bitcoin.com)。","link":"https://news.bitcoin.com/crypto-news/xrp-etfs-week-without-inflows/"},
   ];
   // 保有と計画。xrp / avgCost / executed / cashJpy / ladderNo はユーザーの申告値なので、指示なしに変えない。
   // ルーティンが更新してよいのは buyZone と stopLine だけ。
