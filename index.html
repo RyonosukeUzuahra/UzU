@@ -218,25 +218,25 @@
 (function(){
   // ===== DATA: 日次ルーティンが書き換えるのはこのブロックだけ =====
   // 文章は毎回「置き換え」る。日時の見出しを付けて前回分に書き足さない。
-  const UPDATED = "2026-11-13 20:10";   // JST
+  const UPDATED = "2026-11-14 03:10";   // JST
   // ライブ取得(CoinGecko)に失敗したときだけ使う値
-  const MARKET = { price: 1.02, chg24h: -1.8, chg7d: -17 };
+  const MARKET = { price: 1.03, chg24h: 0.3, chg7d: -13 };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
-  const STANCE = "XRPは一時$1を割り$0.9967まで下落後、$1.02前後へ反発。売られ過ぎ圏だがETF流入は依然ゼロで、$1再割れなら$0.95試しへ。";
+  const STANCE = "XRPは$1近辺で踏み止まり$1.02〜1.03で推移。BTCも本日6.7%急落するなど市場全体の売りが続き、ETF流入ゼロのままで上値は重い。$1割れなら$0.95試しへ。";
   // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
   const CLAUDE_VIEW = {
-    at: "2026-11-13 20:10", stance: "down",
-    head: "$1を一時割れ後に反発、売られ過ぎだが$1再防衛できるかが次の分岐点",
+    at: "2026-11-14 03:10", stance: "down",
+    head: "$1近辺で踏み止まるも、BTC主導の市場全体の売りが重荷",
     reasons: [
-      "米ETFは週間を通じ流入ゼロが続き、資金の裏付けが依然乏しい",
+      "米ETFは流入ゼロが続き、資金の裏付けが依然乏しい",
+      "本日BTCが6.7%急落するなど暗号資産市場全体に売りが波及",
       "CLARITY Actは9月の採決失敗以降停滞、再採決の見通しなし",
-      "RSIは21台まで低下し売られ過ぎ、短期的な反発余地はある",
     ],
     risk: "$0.98〜0.99を再び割り込めば$0.95、さらに$0.80まで下値を試すリスク",
   };
   // 今週の重要イベント。新しい順に最大5件
   const EVENTS = [
-    {"date":"2026-11-13","text":"XRPが一時$1を割り$0.9967まで下落、その後$1.02前後へ反発(複数データソース照会、11/13)"},
+    {"date":"2026-11-13","text":"BTCが本日6.7%急落する中、XRPは一時$1を割った後$1.02〜1.03で踏み止まる(thecryptobasic.com、複数データソース照会、11/13)"},
     {"date":"2026-11-12","text":"米ETF、週間を通じ流入ゼロが継続、直近2日間の流出は合計約$18M(news.bitcoin.com、複数データソース照会、11/12)"},
     {"date":"2026-11-11","text":"XRPは$1.05〜1.06で続落、ETF週間流出が8か月ぶり高水準に拡大(複数データソース照会、11/11)"},
     {"date":"2026-11-09","text":"大口が約6.9億XRP(約$9億相当)をBinanceへ移動と報道(altcoinbuzz.io、11/9)"},
@@ -247,8 +247,8 @@
     {"date":"2026-11-12","tier":"warn","t":"Binance推定$58億〜$60億規模のハッキング疑惑による暗号資産市場全体の急落(史上最大規模の可能性)","s":25,"d":"down","status":"窃取された約2.33億XRP(推定$2.9億相当)は6ウォレットへ分散、うち約$2.4億相当がTron経由で移動。FBIがノード運営者に関連取引のブロックを要請し一部は停止、Binanceは自己資金で被害の大半を補填済みと説明(複数データソース照会、11/12)。","desc":"XRP固有の脆弱性ではなく、Binanceという特定の中央集権型取引所の鍵管理・コールドウォレット運用に起因する事件とみられ、XRPレジャー自体のプロトコルは侵害されていない。ただし業界最大手取引所での大規模流出は暗号資産全体のカウンターパーティリスク・取引所経由保有のリスクを再認識させる材料であり、短期的な価格・流動性への影響(出金停止によるXRPの取引所間アービトラージ阻害、ホエールの取引所離れ加速など)は無視できない。被害総額・Binanceの補償能力・SAFU基金の対応次第で、市場の受け止めは大きく変わる可能性がある。"},
     {"date":"2026-11-08","tier":"warn","t":"地政学リスク(イラン・ホルムズ海峡タンカー攻撃)による暗号資産市場全体の急落","s":55,"d":"down","status":"新規の確度の高い進展は確認されていない。地政学リスクによる逆風継続の位置づけに変化はない(複数データソース照会、11/8 09:00)。"},
     {"date":"2026-11-08","tier":"bad","t":"CLARITY Act(米国市場構造法案)の可決可否","s":84,"d":"down","status":"上院採決は行われておらず、Kalshi調べの成立確率は2027年までで約6%のまま変化はない(複数データソース照会、11/8 09:00)。"},
-    {"date":"2026-11-10","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":64,"d":"down","status":"米10月CPIは前月比+0.4%で予想+0.3%を上回り、コアも+0.3%で高止まり。BTCはETF資金流出が続く中$74,000近辺まで軟化(kucoin.com、複数データソース照会、11/10)。"},
-    {"date":"2026-11-13","tier":"bad","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":66,"d":"down","status":"XRPは一時$1を割り$0.9967まで下落後、$1.02前後へ反発。RSIは21台まで売られ過ぎで短期反発の芽はあるが、$0.98〜0.99の再割れなら$0.95試しへ(複数データソース照会、11/13)。"},
+    {"date":"2026-11-13","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":64,"d":"down","status":"BTCは本日6.7%急落し市場全体に売りが波及、ETHも$2,000割れ。米10月CPI上振れによるFRB利上げ観測も重荷のまま(複数データソース照会、11/13)。"},
+    {"date":"2026-11-13","tier":"bad","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":66,"d":"down","status":"XRPは一時$1を割り$0.9967まで下落後、$1.02〜1.03で踏み止まる。移動平均は軒並み上に位置し下降トレンドは継続、$0.98〜0.99の再割れなら$0.95試しへ(複数データソース照会、11/13)。"},
     {"date":"2026-11-11","tier":"bad","t":"レバレッジ清算・フラッシュクラッシュのリスク","s":70,"d":"down","status":"11/8に約$40M相当(うち$39M超がロング)の清算が発生し懸念が一部現実化。ファンディングレート高水準とスポット安の逆行は継続し、オプション市場も週間±9%超の変動を織り込む(複数データソース照会、11/11)。"},
     {"date":"2026-11-11","tier":"warn","t":"ホエール(大口保有者)の動向:ミリオネアウォレット減少・取引所残高増加で分配シグナル","s":42,"d":"down","status":"1万XRP以上保有の「シャーク」ウォレットは34.35万件に増加する一方、Ripple元CTO Schwartz氏が2025年に250万XRP売却・納税$1.7Mを公表するなど個別の売り材料も続く(複数データソース照会、11/11)。"},
     {"date":"2026-09-10","tier":"good","t":"ホエールの蓄積・取引所からの引き出し","s":85,"d":"up","status":"thecryptobasic.comは9/10、CoinGlass調べのデータとしてBinance建てXRP先物のホエール勘定がロング/ショート比2.74の「極度に強気」ポジショニングを示す一方、Smart Money勢は逆張りの「極度に弱気」だったと報道、現物価格は軟調でもBinance・OKX・Bybit各取引所の大半の投資家層は下落後も強気姿勢を維持していると伝えた(thecryptobasic.com、9/10)。同じくthecryptobasic.comは9/10、XRPが7月下旬から約30%上昇し$1.38前後で推移する一方、Binance上の週次ホエール・リテール流出スプレッド(7日移動平均)は7/28時点の35.6%からほぼ横ばいだが、全取引所ベースのスプレッドは33%から45.8%へ12.8ポイント拡大し、ホエールの取引所引き出しがリテールより速いペースで増えていると報道、中長期のホエール蓄積トレンド継続を示唆する一方、価格上昇に対しリテールの参加が相対的に鈍いことも意味すると分析した(thecryptobasic.com、9/10)。thecryptobasic.com・u.todayは9/9、CoinbaseのXRP保有残高がリッチリスト上で1時間で4,870%(約55.7億枚・$7.74B相当)急増したと一時話題になったが、XRPScanの調査で146件の未タグ付けCoinbaseウォレットが再識別・ラベル付けされた結果であり、新規のXRP流入や買い増しではないと確認されたと報道、この再識別によりCoinbaseはRipple・Upbitに次ぐXRP保有規模第3位の主体に浮上した一方、実際のオンチェーン供給に変化はないと伝えた(thecryptobasic.com、u.today、9/9)。coingape.com・bitcoinethereumnews.comは9/9、CryptoQuant調べのXRPホエールフロー30日移動平均が8月下旬の失速から9月に入り再び上向き、売り圧の緩和を示していると報道、アナリストAli Martinez氏は$1.40上抜けを受けたブレイクアウトで$1.46への上昇を予測したと伝えた(coingape.com、9/9)。一方でthecryptobasic.comは9/8、9/7に100万XRP超の大口ウォレットからBinanceへ計約300万XRPが流入し同グループからの出金はゼロだったと報道、10万〜100万XRP規模の中口ウォレットでも流入が82%増の約26万XRPに達し出金は約29万XRPで横ばいだったと伝え、短期的な売り圧リスクとして一部アナリストが注視していると報じた(thecryptobasic.com、9/8)。もっとも同記事は、全体像としては深刻な懸念には至っていないとも伝えており、蓄積トレンドと個別の取引所流入という相反するシグナルの併存が続いている。u.today・analyticsinsight.netは9/7、CryptoQuant調べのXRP先物出来高が6ヶ月ぶりの高水準に達したと報道、Binanceが主要な流動性ハブとなる中でホエールが9/15の上院クローチャー採決を見込んだポジション積み増し(フロントラン)を進めていると伝えた(u.today、9/7)。247wallst.comは9/11、CME FedWatch調べの9/16 FOMC利上げ確率が8/11時点の48.4%から85.6%まで急伸したと報道、市場の織り込みが『利下げ』観測から『利上げ』観測へこの1ヶ月で一変したと伝えた、利上げが確認されれば警戒ライン$1.10割れのシナリオが早まるリスクがある(247wallst.com、9/11)。finance.yahoo.comは9月上旬、WintermuteがFRBの利下げ観測後退リスクをXRP相場の分岐点として指摘する一方、Binance建てXRP準備高は2025年11月の31億枚から9/1時点で約26億枚まで減少し大口保有者による引き出しが続いていると報道した、あわせて100万〜1000万枚保有アドレスが1週間で約380M枚を積み増し合計保有残高が160.5億枚から163.6億枚に拡大、Binanceへのホエール送金は2021年以来の低水準にとどまっていると伝えた(finance.yahoo.com、9月上旬)。もっとも同記事は、供給面の改善(取引所保有減少)とFRB利下げ観測後退という相反する材料の綱引きが9月相場の分岐点になり得ると分析しており、蓄積の継続と価格の追随は必ずしも一致していない点には留意が必要。yellow.comは9月上旬、主要3取引所のXRP準備高が5月以降で約240M枚減少したと報道、大口保有者向けの引き出しがBinanceからの流出全体の91%を占め2024年以来の高水準の集中度になったと伝えた、8/3時点ではBinanceから流出したXRPの約81%が大口ウォレット向けだった(世界の全取引所平均72%)としており、この資金が9/15〜10/27にかけての規制カタリストを見込んだ確信的な保有継続なのか、それとも下落資産からの単なる損切り回避なのかは今後の値動きが試金石になると分析した(yellow.com、9月上旬)。thecryptobasic.comは9/2、BinanceのXRP月間平均準備高が2025年11月の31億枚超から9/1時点で約26億枚まで減少(約500M枚減)し2024年2月以来の低水準に近づいたと報道、9/1のbeincrypto.com報道(231M枚・約$335M相当の単日引き出し)以降も取引所保有残高の減少基調が続いていると伝えた(thecryptobasic.com、9/2)。beincrypto.comは9/1、XRPホエールが231M枚(約$335M相当)をBinanceから引き出したと報道、半年ぶりの規模の単日引き出しで売却でなく保有継続の姿勢を示していると分析(beincrypto.com、9/1)。crypto.newsは8月下旬〜9月初め、XRPホエールが1週間で約380M枚を積み増し合計保有残高が81.3億枚に達したと報道、Binanceへのホエール送金は2021年以来の低水準まで減少しており、売却でなく保有継続の姿勢を示していると分析、積み増しの中心は18ヶ月以上XRPレジャー上でアクティブなアドレスで投機的というより確信的な買いだと伝えた(crypto.news、8月下旬〜9月初め)。tokenpost.com・thecryptobasicは8月、8月入り後の累計積み増しが約642M枚に達したと伝えた(tokenpost.com、thecryptobasic、8月)。thecoinrepublic.comは8/30、大口トレーダーが10倍レバレッジで$48M規模のXRPロングポジションを新規に建てたと報道、直近サポート$1.36・レジスタンス$1.40〜$1.42が意識されていたと伝えた(thecoinrepublic.com、8/30)。thecoinrepublic.comは8/28、Coinbase系ホエールが$1.53・$1.60・$1.70に買い・売り壁を置きXRPの値動きを狭いレンジに抑え込んでいる状態にあると分析、5日間の純売り局面を経て再びネット買いに転じつつあると報道した(thecoinrepublic.com、8/28)。thecryptobasic.comは8/26、XRP約231M枚(約$335M相当)がBinanceから引き出され半年ぶりの高水準に達したと報道(thecryptobasic.com、8/26)。thecryptobasic.comは9/4、CryptoQuant調べのデータとしてXRPの現物取引高が8月に急増しBinanceだけで約$7.28B(6ヶ月ぶりの高水準)に達したと報道、Upbit($4.68B)・Bithumb($2.59B)が続き韓国系取引所を含む現物売買の活発化・流動性改善を示唆すると伝えた(thecryptobasic.com、9/4)。"},
@@ -277,6 +277,7 @@
   ];
   // 海外メディア。新しい順に最大10件、リンクは実在するものだけ
   const news = [
+    {"date":"2026-11-13","src":"TheCryptoBasic","sentiment":"down","quote":"BTCが6.7%急落、XRPは$1を試す。","note":"thecryptobasic.comは11/13、BTC主導の市場全体急落の中でXRPが重要な$1水準を試したと報道(thecryptobasic.com、11/13)。","link":"https://thecryptobasic.com/2026/11/13/crypto-price-analysis-btc-xrp-sui-link-and-zec-nov-13-bitcoin-slides-6-7-as-xrp-tests-1/"},
     {"date":"2026-11-13","src":"Invezz","sentiment":"down","quote":"$1の節目に接近、割れればどうなるか。","note":"invezz.comは11/13、XRPが重要な$1水準に接近し、割れた場合の展開を分析したと報道(invezz.com、11/13)。","link":"https://invezz.com/news/2026/11/13/xrp-price-approaches-a-make-or-break-1-level-what-happens-if-it-fails/"},
     {"date":"2026-11-13","src":"Blockchain.News","sentiment":"neutral","quote":"売られ過ぎの反発期待も、下降トレンドが重い。","note":"blockchain.newsは11/13、RSIの売られ過ぎシグナルを受けた反発期待はあるが下降トレンドが重いままと報道(blockchain.news、11/13)。","link":"https://blockchain.news/news/20261113-price-prediction-xrp-oversold-bounce-risks-face-a-heavy"},
     {"date":"2026-11-13","src":"CoinCentral","sentiment":"down","quote":"$1割れでアナリストは$0.80までの下落警告。","note":"coincentral.comは、XRPが$1を割り込みアナリストが$0.80までの下落リスクを警告したと報道(coincentral.com)。","link":"https://coincentral.com/xrp-price-slips-below-1-as-analyst-warns-of-0-80-drop"},
@@ -286,7 +287,6 @@
     {"date":"2026-11-11","src":"CoinTurk","sentiment":"down","quote":"ETF流出$18M・BTCは$70,000割れでXRPも$1近辺。","note":"en.coin-turk.comは、ETFの$18M流出とBTCの$70,000割れを受けXRPが$1近辺で推移していると報道(en.coin-turk.com)。","link":"https://en.coin-turk.com/xrp-trades-near-1-as-etfs-post-18-million-outflow-bitcoin-drops-below-70000/"},
     {"date":"2026-11-11","src":"Bitcoin.com","sentiment":"down","quote":"XRPのETF、1週間丸ごと流入ゼロに。","note":"news.bitcoin.comは、米XRP ETFが1週間にわたり流入ゼロを記録したと報道(news.bitcoin.com)。","link":"https://news.bitcoin.com/crypto-news/xrp-etfs-week-without-inflows/"},
     {"date":"2026-11-09","src":"CoinOtag","sentiment":"neutral","quote":"元CTO Schwartz氏、250万XRP売却と納税$1.7Mを公表。","note":"en.coinotag.comは11/9前後、Ripple元CTOのDavid Schwartz氏が2025年に約250万XRPを売却し$1.7Mの納税を行ったことを公表、売り圧懸念への反論だったと報道(en.coinotag.com、11/9)。","link":"https://en.coinotag.com/david-schwartz-sold-2-5-million-xrp-1-7-million-tax-bill"},
-    {"date":"2026-11-04","src":"Cointelegraph","sentiment":"neutral","quote":"Binance、ハッキング被害資産の98%を補填と発表。","note":"cointelegraph.comは、Binanceがハッキングで流出した資産の98%相当を自己資金で補填済みと発表したと報道、XRPの出金も正常化したと伝えた(cointelegraph.com、11/4)。","link":"https://cointelegraph.com/news/binance-hack-90-percent-replenished"},
   ];
   // 保有と計画。xrp / avgCost / executed / cashJpy / ladderNo はユーザーの申告値なので、指示なしに変えない。
   // ルーティンが更新してよいのは buyZone と stopLine だけ。
