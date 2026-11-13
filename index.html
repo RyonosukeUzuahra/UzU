@@ -218,19 +218,19 @@
 (function(){
   // ===== DATA: 日次ルーティンが書き換えるのはこのブロックだけ =====
   // 文章は毎回「置き換え」る。日時の見出しを付けて前回分に書き足さない。
-  const UPDATED = "2026-11-13 03:15";   // JST
+  const UPDATED = "2026-11-13 09:10";   // JST
   // ライブ取得(CoinGecko)に失敗したときだけ使う値
   const MARKET = { price: 1.04, chg24h: null, chg7d: -16 };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
   const STANCE = "XRPは$1.04前後で安値圏停滞が継続。ETF流出・買い戻し乏しさに変化なく、節目$1.00を割れば$0.90試しの展開。";
   // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
   const CLAUDE_VIEW = {
-    at: "2026-11-13 03:15", stance: "down",
-    head: "$1.04まで続落、$1.00の防衛線試しが焦点で割れれば$0.90圏まで下値余地",
+    at: "2026-11-13 09:10", stance: "down",
+    head: "$1.04圏で安値持続、$1.00防衛が今後1〜2週間の最大の分水嶺",
     reasons: [
-      "ETF資金フローは月間を通じ流出優勢で、反転の裏付けなし",
-      "CLARITY Actは採決の見通し立たず、規制カタリストは依然乏しい",
-      "ホエール動向は分裂、Schwartz氏売却公表など個別の売り材料も継続",
+      "ETF資金フローは流出優勢が続き、買い戻しの裏付けが乏しい",
+      "CLARITY Actは再採決の見通しなく規制カタリストを依然欠く",
+      "Binance大型流出事件で市場全体のリスク選好が冷え込んだまま",
     ],
     risk: "$1.00を割り込めば$0.90、さらに$0.80まで節目を試す下値リスク",
   };
@@ -240,11 +240,11 @@
     {"date":"2026-11-10","text":"米ETF、SoSoValue調べで11/9に$10.4M・11/10に$7.62Mの流出、Bitwise主体(複数データソース照会、11/10)"},
     {"date":"2026-11-09","text":"大口が約6.9億XRP(約$9億相当)をBinanceへ移動と報道(altcoinbuzz.io、11/9)"},
     {"date":"2026-11-09","text":"Ripple元CTO David Schwartz氏、2025年に250万XRP売却・納税$1.7Mを公表(en.coinotag.com、11/9)"},
-    {"date":"2026-10-30","text":"Evernorth(XRPN)、既存株主保有7,370万株の再販売登録(S-1)提出で株価軟化(primexbt.com、10/30)"},
+    {"date":"2026-11-12","text":"Binance流出事件、ハッカーが窃取XRPの一部をTron経由で移動・Binanceは自己資金で被害の大半を補填と説明(複数データソース照会、11/12)"},
   ];
   // 価格に効く材料。tier は d と s から: up→good / down&s<60→warn / down&s>=60→bad
   const impacts = [
-    {"date":"2026-11-09","tier":"warn","t":"Binance推定$58億〜$60億規模のハッキング疑惑による暗号資産市場全体の急落(史上最大規模の可能性)","s":25,"d":"down","status":"ハッカーが窃取資金の一部(XRP約1.39億枚・約$1.5億相当)を木曜以降に移動したと報道、現時点で取引所への着金は未確認(99bitcoins.com、複数データソース照会、11/9)。","desc":"XRP固有の脆弱性ではなく、Binanceという特定の中央集権型取引所の鍵管理・コールドウォレット運用に起因する事件とみられ、XRPレジャー自体のプロトコルは侵害されていない。ただし業界最大手取引所での大規模流出は暗号資産全体のカウンターパーティリスク・取引所経由保有のリスクを再認識させる材料であり、短期的な価格・流動性への影響(出金停止によるXRPの取引所間アービトラージ阻害、ホエールの取引所離れ加速など)は無視できない。被害総額・Binanceの補償能力・SAFU基金の対応次第で、市場の受け止めは大きく変わる可能性がある。"},
+    {"date":"2026-11-12","tier":"warn","t":"Binance推定$58億〜$60億規模のハッキング疑惑による暗号資産市場全体の急落(史上最大規模の可能性)","s":25,"d":"down","status":"窃取された約2.33億XRP(推定$2.9億相当)は6ウォレットへ分散、うち約$2.4億相当がTron経由で移動。FBIがノード運営者に関連取引のブロックを要請し一部は停止、Binanceは自己資金で被害の大半を補填済みと説明(複数データソース照会、11/12)。","desc":"XRP固有の脆弱性ではなく、Binanceという特定の中央集権型取引所の鍵管理・コールドウォレット運用に起因する事件とみられ、XRPレジャー自体のプロトコルは侵害されていない。ただし業界最大手取引所での大規模流出は暗号資産全体のカウンターパーティリスク・取引所経由保有のリスクを再認識させる材料であり、短期的な価格・流動性への影響(出金停止によるXRPの取引所間アービトラージ阻害、ホエールの取引所離れ加速など)は無視できない。被害総額・Binanceの補償能力・SAFU基金の対応次第で、市場の受け止めは大きく変わる可能性がある。"},
     {"date":"2026-11-08","tier":"warn","t":"地政学リスク(イラン・ホルムズ海峡タンカー攻撃)による暗号資産市場全体の急落","s":55,"d":"down","status":"新規の確度の高い進展は確認されていない。地政学リスクによる逆風継続の位置づけに変化はない(複数データソース照会、11/8 09:00)。"},
     {"date":"2026-11-08","tier":"bad","t":"CLARITY Act(米国市場構造法案)の可決可否","s":84,"d":"down","status":"上院採決は行われておらず、Kalshi調べの成立確率は2027年までで約6%のまま変化はない(複数データソース照会、11/8 09:00)。"},
     {"date":"2026-11-10","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":64,"d":"down","status":"米10月CPIは前月比+0.4%で予想+0.3%を上回り、コアも+0.3%で高止まり。BTCはETF資金流出が続く中$74,000近辺まで軟化(kucoin.com、複数データソース照会、11/10)。"},
@@ -286,7 +286,7 @@
     {"date":"2026-11-10","src":"The Currency Analytics","sentiment":"neutral","quote":"「シャーク」ウォレット34.35万件に増加、ETFは$18M規模の流出。","note":"thecurrencyanalytics.comは、1万XRP以上保有の「シャーク」ウォレット数が34.35万件に増加する一方、米ETFは$18M規模の流出が続いていると報道(thecurrencyanalytics.com)。","link":"https://thecurrencyanalytics.com/breaking-news/xrp-shark-wallets-hit-343500-as-us-etfs-see-18m-outflows"},
     {"date":"2026-11-09","src":"TheCryptoBasic","sentiment":"down","quote":"最終防衛ゾーンに到達、$1.07が全ての分岐点。","note":"thecryptobasic.comは11/9、XRPが最終的な支持ゾーンに到達し$1.07水準が今後の方向性を左右する分岐点になっていると報道(thecryptobasic.com、11/9)。","link":"https://thecryptobasic.com/2026/11/09/xrp-hits-its-final-support-zone-everything-hinges-on-the-1-07-level/"},
     {"date":"2026-11-09","src":"CoinOtag","sentiment":"neutral","quote":"元CTO Schwartz氏、250万XRP売却と納税$1.7Mを公表。","note":"en.coinotag.comは11/9前後、Ripple元CTOのDavid Schwartz氏が2025年に約250万XRPを売却し$1.7Mの納税を行ったことを公表、売り圧懸念への反論だったと報道(en.coinotag.com、11/9)。","link":"https://en.coinotag.com/david-schwartz-sold-2-5-million-xrp-1-7-million-tax-bill"},
-    {"date":"2026-10-30","src":"PrimeXBT","sentiment":"down","quote":"Evernorth、7,370万株の再販売登録(S-1)提出で株価軟化。","note":"primexbt.comは10/30、Ripple関連のXRP財務会社Evernorthが既存株主保有の7,370万株についてSEC再販売登録(S-1)を提出、株価が軟化したと報道(primexbt.com、10/30)。","link":"https://primexbt.com/news/evernorth-files-to-register-73-7-million-shares-for-resale-as-stock-falls-after/"},
+    {"date":"2026-11-02","src":"Bitcoin.com","sentiment":"down","quote":"Binanceハッカーが窃取した約$293M相当のXRPを移動。","note":"news.bitcoin.comは、Binance侵害で流出した約2.33億XRP(推定$293M相当)をハッカーが新規6ウォレットへ分散移動したと報道、一部はTron経由で流出(news.bitcoin.com)。","link":"https://news.bitcoin.com/security/binance-hacker-moves-293m-stolen-xrp/"},
   ];
   // 保有と計画。xrp / avgCost / executed / cashJpy / ladderNo はユーザーの申告値なので、指示なしに変えない。
   // ルーティンが更新してよいのは buyZone と stopLine だけ。
