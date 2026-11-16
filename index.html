@@ -218,25 +218,25 @@
 (function(){
   // ===== DATA: 日次ルーティンが書き換えるのはこのブロックだけ =====
   // 文章は毎回「置き換え」る。日時の見出しを付けて前回分に書き足さない。
-  const UPDATED = "2026-11-16 20:10";   // JST
+  const UPDATED = "2026-11-17 03:15";   // JST
   // ライブ取得(CoinGecko)に失敗したときだけ使う値
-  const MARKET = { price: 0.97, chg24h: 4.0, chg7d: -14 };
+  const MARKET = { price: 0.95, chg24h: null, chg7d: -15 };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
-  const STANCE = "週末に2年ぶり安値$0.89まで急落後、$0.96〜0.97まで反発。$0.93の週足support割れなら$0.90・$0.85への再下落に警戒。";
+  const STANCE = "$0.89の安値から反発も$0.95前後で伸び悩み、週足RSIが20水準を再テスト。$0.93の週足support割れなら$0.90・$0.85への再下落に警戒。";
   // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
   const CLAUDE_VIEW = {
-    at: "2026-11-16 20:10", stance: "down",
-    head: "2年ぶり安値$0.89からの反発も、ETF流出とCLARITY停滞で戻りの土台は弱い",
+    at: "2026-11-17 03:15", stance: "down",
+    head: "週足RSIが20水準まで沈み歴史的な売られ過ぎ圏、戻りの芽と$0.93割れリスクが綱引き",
     reasons: [
-      "週末に$0.89まで急落、$0.93の週足supportを割れば再下落の芽",
-      "XRP ETFは週間$19M超の純流出、資金フローの勢いは弱いまま",
-      "CLARITY Actは9月の採決不成立以降停滞、規制明確化は遠のく",
+      "週足RSIが20水準を再テスト、ダブルボトム形成の可能性に注目集まる",
+      "XRP ETFは週間$19M超の純流出、資金フローはなお弱いまま",
+      "CLARITY Actは9月の採決不成立以降停滞、年内成立確率は3%まで低下",
     ],
-    risk: "$0.93を再び割り込むと$0.90→$0.85への下値模索が加速するリスク",
+    risk: "$0.93の週足supportを再び割り込むと$0.90→$0.85への下値模索が加速するリスク",
   };
   // 今週の重要イベント。新しい順に最大5件
   const EVENTS = [
-    {"date":"2026-11-16","text":"XRPが週末の2年ぶり安値$0.89から$0.96〜0.97まで反発、週足supportは$0.93(hokanews.com、crypto.news、11/16)"},
+    {"date":"2026-11-16","text":"週足RSIが20水準を再テスト、$0.89安値から$0.95前後まで反発(thecryptobasic.com、hokanews.com、11/16)"},
     {"date":"2026-11-15","text":"保有1万XRP以上のウォレット数が343,500件と過去最多を記録(Santiment、複数データソース照会、11/15)"},
     {"date":"2026-11-13","text":"XRP ETFが週間$19.13M純流出、3月以来最弱の週間成績に(複数データソース照会、11/13)"},
     {"date":"2026-12-01","text":"Rippleの次回月次エスクローアンロックで10億XRPが解放対象に(crypto.news、11/15)"},
@@ -248,7 +248,7 @@
     {"date":"2026-11-08","tier":"warn","t":"地政学リスク(イラン・ホルムズ海峡タンカー攻撃)による暗号資産市場全体の急落","s":55,"d":"down","status":"新規の確度の高い進展は確認されていない。地政学リスクによる逆風継続の位置づけに変化はない(複数データソース照会、11/8 09:00)。"},
     {"date":"2026-11-06","tier":"bad","t":"CLARITY Act(米国市場構造法案)の可決可否","s":88,"d":"down","status":"11/3の中間選挙で民主党が上下両院を制し2027年1月に新議会発足予定、レームダック会期が今会期最後の成立機会に。Polymarket調べの年内成立確率は3%まで低下(cointelegraph.com、複数データソース照会、11/6)。"},
     {"date":"2026-11-16","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":64,"d":"down","status":"週末に$0.89まで急落(2年ぶり安値)後、$0.96〜0.97まで反発。FRB追加利上げ観測とドル高は引き続き重荷(複数データソース照会、11/16)。"},
-    {"date":"2026-11-16","tier":"bad","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":66,"d":"down","status":"週末に$0.89まで急落(2年ぶり安値)した後、$0.96〜0.97まで反発。週足supportは$0.93、割れれば$0.90・$0.85へ。上値は$0.99〜1.02が抵抗(hokanews.com、crypto.news、11/16)。"},
+    {"date":"2026-11-16","tier":"bad","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":66,"d":"down","status":"週末に$0.89まで急落(2年ぶり安値)後、$0.95前後まで反発。週足RSIは20水準を再テストし売られ過ぎ圏、$0.93割れなら$0.90・$0.85へ。上値は$0.99〜1.02が抵抗(hokanews.com、thecryptobasic.com、11/16)。"},
     {"date":"2026-11-16","tier":"bad","t":"レバレッジ清算・フラッシュクラッシュのリスク","s":70,"d":"down","status":"週末の急落で清算が相次いだ後、Binanceの建玉(OI)は24時間で4.5%減の$267.3Mまで縮小しレバレッジはやや後退(coincentral.com、複数データソース照会、11/16)。"},
     {"date":"2026-11-16","tier":"warn","t":"ホエール(大口保有者)の動向:ミリオネアウォレット減少・取引所残高増加で分配シグナル","s":42,"d":"down","status":"保有1万XRP以上のウォレット数が343,500件と過去最多を記録する一方、$0.89の安値では2.4億XRPの大口移動(取引所向けではないとの分析も)を観測(Santiment、u.today、複数データソース照会、11/16)。"},
     {"date":"2026-11-13","tier":"good","t":"現物XRP ETFへの資金流入 & SEC規制明確化","s":15,"d":"up","status":"XRP ETFは11/9〜13の週に$19.13M純流出、3月以来最弱の週間成績に。新規の大口資金流入は確認されず(複数データソース照会、11/13)。"},
@@ -269,6 +269,7 @@
   ];
   // 海外メディア。新しい順に最大10件、リンクは実在するものだけ
   const news = [
+    {"date":"2026-11-16","src":"TheCryptoBasic","sentiment":"neutral","quote":"週足RSIが20水準を再テスト、ダブルボトム形成に注目。","note":"thecryptobasic.comは11/16、XRPの週足RSIが再び20水準まで低下、20を上回って週を終えれば売られ過ぎからの戻りのサインになり得ると報道(thecryptobasic.com、11/16)。","link":"https://thecryptobasic.com/2026/11/16/xrp-price-scenarios-as-xrps-weekly-rsi-tests-20-again/"},
     {"date":"2026-11-16","src":"Hokanews","sentiment":"up","quote":"週末安値$0.89から4%反発、$0.93前後で攻防。","note":"hokanews.comは11/16、XRPが24時間で4.0%反発し$0.9664まで回復、$0.93の週足supportが試されていると報道(hokanews.com、11/16)。","link":"https://www.hokanews.com/2026/11/xrp-price-prediction-november-16-xrp.html"},
     {"date":"2026-11-15","src":"CryptoTicker","sentiment":"neutral","quote":"2.4億XRP移動も取引所向けではないと分析。","note":"cryptoticker.ioは11/15、2年ぶり安値圏で観測された2.4億XRPの大口移動は取引所宛てではないと分析したと報道(cryptoticker.io、11/15)。","link":"https://cryptoticker.io/en/xrp-price-prediction-240-million-xrp-whale-transfer-escrow-november-15-2026/"},
     {"date":"2026-11-15","src":"BigGo Finance","sentiment":"down","quote":"2年ぶり安値$0.89、大口移動は取引所回避。","note":"finance.biggo.comは11/15、XRPが2年ぶり安値$0.89まで下落する中、2.4億XRP規模の大口移動が取引所を経由せずに行われたと報道(finance.biggo.com、11/15)。","link":"https://finance.biggo.com/news/2e08e015-f7fb-4ebc-be9d-5d556eee0760"},
@@ -278,7 +279,6 @@
     {"date":"2026-11-15","src":"U.Today","sentiment":"neutral","quote":"$0.89の安値で2.4億XRPの大口移動を観測。","note":"u.todayは11/15、XRPが$0.89の安値をつけた瞬間に2.4億XRPの大口ウォレット移動があったと報道(u.today、11/15)。","link":"https://u.today/someone-moves-240-million-xrp-the-exact-moment-price-hits-its-089-floor"},
     {"date":"2026-11-15","src":"TheCryptoBasic","sentiment":"neutral","quote":"$1割れも先物の建玉は大きく縮小せず。","note":"thecryptobasic.comは11/15、XRPが$1を割り込む中でもドル建て先物の建玉は大きく縮小していないと報道(thecryptobasic.com、11/15)。","link":"https://thecryptobasic.com/2026/11/15/xrp-falls-below-1-but-falling-dollar-open-interest-masks-broadly-steady-futures-exposure/"},
     {"date":"2026-11-15","src":"Blockchain.News","sentiment":"neutral","quote":"売られ過ぎで反発リスクも、下降トレンドは継続。","note":"blockchain.newsは11/15、RSIが売られ過ぎ水準でも下降トレンドの構造自体は崩れていないと報道(blockchain.news、11/15)。","link":"https://blockchain.news/news/20261115-price-prediction-xrp-oversold-bounce-risk-emerges-as-trend"},
-    {"date":"2026-11-13","src":"CryptoTicker","sentiment":"neutral","quote":"過去最多のホエールウォレットがETF流出を相殺できるか。","note":"cryptoticker.ioは11/13、1万XRP以上を保有するウォレット数が過去最多を記録する中、ETFの2日間流出$18Mを相殺できるか注目されると報道(cryptoticker.io、11/13)。","link":"https://cryptoticker.io/en/xrp-price-prediction-whale-wallets-etf-outflows-november-13-2026/"},
   ];
   // 保有と計画。xrp / avgCost / executed / cashJpy / ladderNo はユーザーの申告値なので、指示なしに変えない。
   // ルーティンが更新してよいのは buyZone と stopLine だけ。
