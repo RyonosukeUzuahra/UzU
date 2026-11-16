@@ -218,40 +218,40 @@
 (function(){
   // ===== DATA: 日次ルーティンが書き換えるのはこのブロックだけ =====
   // 文章は毎回「置き換え」る。日時の見出しを付けて前回分に書き足さない。
-  const UPDATED = "2026-11-16 03:10";   // JST
+  const UPDATED = "2026-11-16 20:10";   // JST
   // ライブ取得(CoinGecko)に失敗したときだけ使う値
-  const MARKET = { price: 0.95, chg24h: -5.0, chg7d: -15 };
+  const MARKET = { price: 0.97, chg24h: 4.0, chg7d: -14 };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
-  const STANCE = "XRPは一時$0.89まで急落(2024年11月以来の安値)、$0.96近辺まで戻すも上値は重い。$0.90割れが続けば$0.85・$0.80への下値探りに注意。";
+  const STANCE = "週末に2年ぶり安値$0.89まで急落後、$0.96〜0.97まで反発。$0.93の週足support割れなら$0.90・$0.85への再下落に警戒。";
   // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
   const CLAUDE_VIEW = {
-    at: "2026-11-16 03:10", stance: "down",
-    head: "$0.89の2年ぶり安値から$0.95前後まで戻すも、下降トレンドの構造は崩れていない",
+    at: "2026-11-16 20:10", stance: "down",
+    head: "2年ぶり安値$0.89からの反発も、ETF流出とCLARITY停滞で戻りの土台は弱い",
     reasons: [
-      "$0.89安値(24年11月以来)から$0.95前後まで反発も上値は重い",
-      "ETF資金流出・清算が続き、CLARITY Actの年内成立確率も低下",
-      "RSIは売られ過ぎ水準だが下降トレンド自体はまだ継続中",
+      "週末に$0.89まで急落、$0.93の週足supportを割れば再下落の芽",
+      "XRP ETFは週間$19M超の純流出、資金フローの勢いは弱いまま",
+      "CLARITY Actは9月の採決不成立以降停滞、規制明確化は遠のく",
     ],
-    risk: "$0.90を再び割り込むと$0.85→$0.80への下値探りが加速するリスク",
+    risk: "$0.93を再び割り込むと$0.90→$0.85への下値模索が加速するリスク",
   };
   // 今週の重要イベント。新しい順に最大5件
   const EVENTS = [
-    {"date":"2026-11-15","text":"XRPが一時$0.89まで急落、2024年11月以来の安値も$0.96近辺まで回復(coinotag.com、thedefiant.io、11/15)"},
-    {"date":"2026-11-15","text":"$0.89の安値で2.4億XRPの大口ウォレット移動を観測(u.today、11/15)"},
-    {"date":"2026-11-10","text":"米XRP ETFが単日$10.42M流出、3月以来最大規模(coinotag.com、11/10)"},
+    {"date":"2026-11-16","text":"XRPが週末の2年ぶり安値$0.89から$0.96〜0.97まで反発、週足supportは$0.93(hokanews.com、crypto.news、11/16)"},
+    {"date":"2026-11-15","text":"保有1万XRP以上のウォレット数が343,500件と過去最多を記録(Santiment、複数データソース照会、11/15)"},
+    {"date":"2026-11-13","text":"XRP ETFが週間$19.13M純流出、3月以来最弱の週間成績に(複数データソース照会、11/13)"},
     {"date":"2026-12-01","text":"Rippleの次回月次エスクローアンロックで10億XRPが解放対象に(crypto.news、11/15)"},
-    {"date":"2026-11-07","text":"ホエールはXRP買い増しを継続、リテールは投げ売りを拡大(複数データソース照会、11/7)"},
+    {"date":"2026-11-15","text":"$0.89の安値で2.4億XRPの大口ウォレット移動を観測、取引所向けではないとの分析も(u.today、cryptoticker.io、11/15)"},
   ];
   // 価格に効く材料。tier は d と s から: up→good / down&s<60→warn / down&s>=60→bad
   const impacts = [
     {"date":"2026-11-04","tier":"warn","t":"Binance推定$58億〜$60億規模のハッキング疑惑による暗号資産市場全体の急落(史上最大規模の可能性)","s":25,"d":"down","status":"Binanceは11/4時点で被害資産の約98%を補填完了と発表、XRP含む主要資産の出金も段階的に再開済みで事件は収束局面入り(saharareporters.com、複数データソース照会、11/4)。","desc":"XRP固有の脆弱性ではなく、Binanceという特定の中央集権型取引所の鍵管理・コールドウォレット運用に起因する事件とみられ、XRPレジャー自体のプロトコルは侵害されていない。ただし業界最大手取引所での大規模流出は暗号資産全体のカウンターパーティリスク・取引所経由保有のリスクを再認識させる材料であり、短期的な価格・流動性への影響(出金停止によるXRPの取引所間アービトラージ阻害、ホエールの取引所離れ加速など)は無視できない。被害総額・Binanceの補償能力・SAFU基金の対応次第で、市場の受け止めは大きく変わる可能性がある。"},
     {"date":"2026-11-08","tier":"warn","t":"地政学リスク(イラン・ホルムズ海峡タンカー攻撃)による暗号資産市場全体の急落","s":55,"d":"down","status":"新規の確度の高い進展は確認されていない。地政学リスクによる逆風継続の位置づけに変化はない(複数データソース照会、11/8 09:00)。"},
     {"date":"2026-11-06","tier":"bad","t":"CLARITY Act(米国市場構造法案)の可決可否","s":88,"d":"down","status":"11/3の中間選挙で民主党が上下両院を制し2027年1月に新議会発足予定、レームダック会期が今会期最後の成立機会に。Polymarket調べの年内成立確率は3%まで低下(cointelegraph.com、複数データソース照会、11/6)。"},
-    {"date":"2026-11-15","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":64,"d":"down","status":"暗号資産市場全体の急落が深まりXRPも$0.89まで急落、2024年11月以来の安値をつけた。FRB追加利上げ観測とドル高も重荷(複数データソース照会、11/15)。"},
-    {"date":"2026-11-15","tier":"bad","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":66,"d":"down","status":"一時$0.89まで急落し2024年11月以来の安値をつけた後、$0.96近辺まで反発。目先の支持は$0.90→$0.85、深ければ$0.80。戻りは$1.00、20日線$1.16が上値抵抗(複数データソース照会、11/15)。"},
-    {"date":"2026-11-15","tier":"bad","t":"レバレッジ清算・フラッシュクラッシュのリスク","s":70,"d":"down","status":"XRPが$1を割り込む過程で24時間に約$51.66Mが清算されるなど、ロング中心の清算が継続(coingabbar.com、複数データソース照会、11/15)。"},
-    {"date":"2026-11-15","tier":"warn","t":"ホエール(大口保有者)の動向:ミリオネアウォレット減少・取引所残高増加で分配シグナル","s":42,"d":"down","status":"$0.89の安値をつけた瞬間に2.4億XRPの大口ウォレット移動を観測。ホエールは買い増しを継続する一方、リテールの投げ売りも続く(u.today、複数データソース照会、11/15)。"},
-    {"date":"2026-11-15","tier":"good","t":"現物XRP ETFへの資金流入 & SEC規制明確化","s":15,"d":"up","status":"米XRP ETFは軟調が続き、新規の大口資金流入は確認されず。11/10の単日$10.42M流出(3月以来最大規模)以降も流出圧力が残る(複数データソース照会、11/15)。"},
+    {"date":"2026-11-16","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":64,"d":"down","status":"週末に$0.89まで急落(2年ぶり安値)後、$0.96〜0.97まで反発。FRB追加利上げ観測とドル高は引き続き重荷(複数データソース照会、11/16)。"},
+    {"date":"2026-11-16","tier":"bad","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":66,"d":"down","status":"週末に$0.89まで急落(2年ぶり安値)した後、$0.96〜0.97まで反発。週足supportは$0.93、割れれば$0.90・$0.85へ。上値は$0.99〜1.02が抵抗(hokanews.com、crypto.news、11/16)。"},
+    {"date":"2026-11-16","tier":"bad","t":"レバレッジ清算・フラッシュクラッシュのリスク","s":70,"d":"down","status":"週末の急落で清算が相次いだ後、Binanceの建玉(OI)は24時間で4.5%減の$267.3Mまで縮小しレバレッジはやや後退(coincentral.com、複数データソース照会、11/16)。"},
+    {"date":"2026-11-16","tier":"warn","t":"ホエール(大口保有者)の動向:ミリオネアウォレット減少・取引所残高増加で分配シグナル","s":42,"d":"down","status":"保有1万XRP以上のウォレット数が343,500件と過去最多を記録する一方、$0.89の安値では2.4億XRPの大口移動(取引所向けではないとの分析も)を観測(Santiment、u.today、複数データソース照会、11/16)。"},
+    {"date":"2026-11-13","tier":"good","t":"現物XRP ETFへの資金流入 & SEC規制明確化","s":15,"d":"up","status":"XRP ETFは11/9〜13の週に$19.13M純流出、3月以来最弱の週間成績に。新規の大口資金流入は確認されず(複数データソース照会、11/13)。"},
     {"date":"2026-09-17","tier":"good","t":"Ripple、Stripe/TempoのAIエージェント決済標準をXRP開発者キットに追加","s":22,"d":"up","status":"coindesk.com・en.coin-turk.com・kucoin.comは9/17、RippleがXRPレジャー向け開発者キット『XRPL AIスターターキット』をバージョン1.1へ更新し、StripeとTempoが策定したMachine Payments Protocol(MPP)・Open Wallet Standardに対応したと報道、AIエージェントがデータ・計算資源などのオンラインサービスへの支払いをXRP・RLUSDで行えるようになったと伝えた。ベータ版は秘密鍵にアクセスせず支払い上限・承認済み送金先などの制御を可能にするOpen Wallet Standard統合を備え、AnthropicのClaudeなどAIシステムとの連携も想定していると伝えた(coindesk.com、en.coin-turk.com、kucoin.com、9/17)。","desc":"AIエージェント同士の自動決済(マシンペイメント)分野でのXRP・RLUSD採用を広げる開発者向け基盤整備であり、即座の価格材料ではないが、決済ユースケースの裾野拡大を示す実需インフラ整備の一例として位置づけられる。ソフトウェアは現時点でベータ・テスト段階。"},
     {"date":"2026-10-28","tier":"good","t":"XRPレジャーの決済実需とネットワーク収益構造","s":64,"d":"up","status":"kucoin.com・cryptobriefing.com・coinpaper.com・cryptoslate.comは10/28、Ripple Swell 2026(NYC)でRippleが決済・カストディ・ステーブルコイン・プライムブローカレッジ・トレジャリー事業の拡大により2026年末までに年率$900M規模の製品収益ランレートを見込むと発表したと報道。連携する機関・企業数は年初から3倍の1,700超に達し、RLUSDの市場規模は$2.6Bに達したという。なお同時期の報道はXRP価格が年初来で約-28.8%下落と対比的に伝えている(ランレートは実現済み収益ではない点に留意)(kucoin.com、cryptobriefing.com、複数データソース照会、10/30 03:00)。"},
     {"date":"2026-11-06","tier":"good","t":"RLUSD / Open USD ステーブルコイン拡大","s":62,"d":"up","status":"新たな確度の高いRLUSD固有の材料は確認されていない。流通量$2.5B超・ホエールウォレット数2,147件(2026年最高値)の水準は維持されており、暗号資産市場全体の急落の中でもステーブルコイン・オンチェーン活動の拡大基調に変化はない(複数データソース照会、11/6 20:00)。"},
@@ -269,16 +269,16 @@
   ];
   // 海外メディア。新しい順に最大10件、リンクは実在するものだけ
   const news = [
+    {"date":"2026-11-16","src":"Hokanews","sentiment":"up","quote":"週末安値$0.89から4%反発、$0.93前後で攻防。","note":"hokanews.comは11/16、XRPが24時間で4.0%反発し$0.9664まで回復、$0.93の週足supportが試されていると報道(hokanews.com、11/16)。","link":"https://www.hokanews.com/2026/11/xrp-price-prediction-november-16-xrp.html"},
+    {"date":"2026-11-15","src":"CryptoTicker","sentiment":"neutral","quote":"2.4億XRP移動も取引所向けではないと分析。","note":"cryptoticker.ioは11/15、2年ぶり安値圏で観測された2.4億XRPの大口移動は取引所宛てではないと分析したと報道(cryptoticker.io、11/15)。","link":"https://cryptoticker.io/en/xrp-price-prediction-240-million-xrp-whale-transfer-escrow-november-15-2026/"},
+    {"date":"2026-11-15","src":"BigGo Finance","sentiment":"down","quote":"2年ぶり安値$0.89、大口移動は取引所回避。","note":"finance.biggo.comは11/15、XRPが2年ぶり安値$0.89まで下落する中、2.4億XRP規模の大口移動が取引所を経由せずに行われたと報道(finance.biggo.com、11/15)。","link":"https://finance.biggo.com/news/2e08e015-f7fb-4ebc-be9d-5d556eee0760"},
     {"date":"2026-11-15","src":"TheDefiant","sentiment":"down","quote":"$0.89まで急落、2024年11月以来の安値に。","note":"thedefiant.ioは11/15、XRPがCoinbase上で$0.8922まで急落し2024年11月以来の安値をつけたと報道(thedefiant.io、11/15)。","link":"https://thedefiant.io/news/markets/xrp-falls-to-89-cents-on-coinbase-its-lowest-since-november-2024"},
     {"date":"2026-11-15","src":"CoinOtag","sentiment":"down","quote":"2年ぶり安値$0.89から$0.96近辺まで回復。","note":"en.coinotag.comは11/15、XRPが一時$0.89まで急落した後$0.96近辺まで回復したと報道(en.coinotag.com、11/15)。","link":"https://en.coinotag.com/xrp-2-year-low-89-cents-overnight-selloff"},
     {"date":"2026-11-15","src":"crypto.news","sentiment":"down","quote":"$1割れの2年ぶり安値、次は$0.85か。","note":"crypto.newsは11/15、XRPが$1を割り$0.89まで下落、アナリストは$0.90・$0.85を支持線として注視していると報道(crypto.news、11/15)。","link":"https://crypto.news/xrp-price-below-1-etf-outflows-whale-activity/"},
     {"date":"2026-11-15","src":"U.Today","sentiment":"neutral","quote":"$0.89の安値で2.4億XRPの大口移動を観測。","note":"u.todayは11/15、XRPが$0.89の安値をつけた瞬間に2.4億XRPの大口ウォレット移動があったと報道(u.today、11/15)。","link":"https://u.today/someone-moves-240-million-xrp-the-exact-moment-price-hits-its-089-floor"},
     {"date":"2026-11-15","src":"TheCryptoBasic","sentiment":"neutral","quote":"$1割れも先物の建玉は大きく縮小せず。","note":"thecryptobasic.comは11/15、XRPが$1を割り込む中でもドル建て先物の建玉は大きく縮小していないと報道(thecryptobasic.com、11/15)。","link":"https://thecryptobasic.com/2026/11/15/xrp-falls-below-1-but-falling-dollar-open-interest-masks-broadly-steady-futures-exposure/"},
     {"date":"2026-11-15","src":"Blockchain.News","sentiment":"neutral","quote":"売られ過ぎで反発リスクも、下降トレンドは継続。","note":"blockchain.newsは11/15、RSIが売られ過ぎ水準でも下降トレンドの構造自体は崩れていないと報道(blockchain.news、11/15)。","link":"https://blockchain.news/news/20261115-price-prediction-xrp-oversold-bounce-risk-emerges-as-trend"},
-    {"date":"2026-11-15","src":"TraderNewsCentral","sentiment":"down","quote":"資金が暗号資産市場から流出、2024年以来の安値に。","note":"tradernewscentral.comは11/15、暗号資産市場全体からの資金流出が続く中でXRPが2024年11月以来の安値まで下落したと報道(tradernewscentral.com、11/15)。","link":"https://www.tradernewscentral.com/2026/11/15/xrp-crashes-to-its-lowest-since-november-2024-as-money-leaves-crypto/"},
-    {"date":"2026-11-14","src":"CoinTurk","sentiment":"down","quote":"過去最高値から74%安の2年ぶり安値に。","note":"en.coin-turk.comは11/14、XRPが過去最高値から約74%下落し2年ぶりの安値まで下落したと報道(en.coin-turk.com、11/14)。","link":"https://en.coin-turk.com/xrp-falls-to-two-year-low-down-74yuzde-from-all-time-high/"},
-    {"date":"2026-11-14","src":"CryptoPotato","sentiment":"down","quote":"2年ぶり安値へ、最悪はまだ先か。","note":"cryptopotato.comは11/14、XRPが2年ぶり安値まで下落する中、最悪の局面はまだ先かもしれないと分析(cryptopotato.com、11/14)。","link":"https://cryptopotato.com/ripple-price-analysis-is-the-worst-yet-to-come-as-xrp-dumps-to-a-2-year-low/"},
-    {"date":"2026-11-14","src":"CoinGabbar","sentiment":"down","quote":"$1割れの24時間で$51.66Mが清算。","note":"coingabbar.comは11/14、XRPが$1を割り込む24時間で約$51.66Mが清算されたと報道(coingabbar.com、11/14)。","link":"https://www.coingabbar.com/en/xrp-news-today-51-million-liquidations-price-below-1"},
+    {"date":"2026-11-13","src":"CryptoTicker","sentiment":"neutral","quote":"過去最多のホエールウォレットがETF流出を相殺できるか。","note":"cryptoticker.ioは11/13、1万XRP以上を保有するウォレット数が過去最多を記録する中、ETFの2日間流出$18Mを相殺できるか注目されると報道(cryptoticker.io、11/13)。","link":"https://cryptoticker.io/en/xrp-price-prediction-whale-wallets-etf-outflows-november-13-2026/"},
   ];
   // 保有と計画。xrp / avgCost / executed / cashJpy / ladderNo はユーザーの申告値なので、指示なしに変えない。
   // ルーティンが更新してよいのは buyZone と stopLine だけ。
