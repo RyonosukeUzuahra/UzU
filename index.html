@@ -218,28 +218,28 @@
 (function(){
   // ===== DATA: 日次ルーティンが書き換えるのはこのブロックだけ =====
   // 文章は毎回「置き換え」る。日時の見出しを付けて前回分に書き足さない。
-  const UPDATED = "2026-11-20 20:15";   // JST
+  const UPDATED = "2026-11-21 03:15";   // JST
   // ライブ取得(CoinGecko)に失敗したときだけ使う値
-  const MARKET = { price: 0.97, chg24h: -0.3, chg7d: -4.5 };
+  const MARKET = { price: 0.97, chg24h: -1.0, chg7d: -4.0 };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
-  const STANCE = "木曜も$1奪回に失敗し$0.97台で軟調。ETF需要は細く地合いは弱い、$0.945割れなら8月安値圏が再び視野。";
+  const STANCE = "週足RSIに下げ鈍化を示すダイバージェンスが出現したが$1回復はまだ未確証。$0.97前後で推移、$0.94割れなら次の下値確認へ。";
   // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
   const CLAUDE_VIEW = {
-    at: "2026-11-20 20:15", stance: "down",
-    head: "$1回復失敗が続き、$0.94台を割れば次の下値確認に入る局面",
+    at: "2026-11-21 03:15", stance: "down",
+    head: "週足RSIに逆行現象、下げ勢い鈍化も$1回復の確証はまだ乏しい局面",
     reasons: [
-      "11/19に$1奪回再失敗、Fear&Greed指数は21と深い恐怖圏に沈む",
-      "ETFは週間$19M超流出・11/17も$6M超流出で新規資金の支えが弱い",
-      "Anthropic等AI大型IPOが市場流動性を吸い上げているとの分析が広がる",
+      "週足RSIがブルダイバージェンス形成、安値更新でも下げ圧力鈍化の兆し",
+      "ETFは週間$19M超流出の流れが続き新規資金の後ろ盾はなお弱い",
+      "日足RSIは32で売られ過ぎ圏、$0.99〜$1.02が当面の上値の壁",
     ],
-    risk: "週足終値が$0.94台を割れば8月安値圏の$0.85〜0.60への下落シナリオが再浮上するリスク",
+    risk: "週足終値が$0.94台を割れば$0.84前後の次の下値ゾーンが視野に入るリスク",
   };
   // 今週の重要イベント。新しい順に最大5件
   const EVENTS = [
+    {"date":"2026-11-20","text":"週足RSIにブルダイバージェンス出現、下げ勢いの鈍化を示唆(thecryptobasic.com、11/20)"},
     {"date":"2026-11-19","text":"XRPが週末安値から踏みとどまったBTCに対し$1を再度失う(thecryptobasic.com、11/19)"},
     {"date":"2026-11-19","text":"Anthropicがナスダックに上場(評価額$1.4兆規模)、AI大型IPOが市場流動性を吸収との見方(decrypt.co、11/19)"},
     {"date":"2026-11-17","text":"RLUSDがPYUSDを上回り流通量で米ドルステーブルコイン7位に浮上(bitcoin.com、11/17)"},
-    {"date":"2026-11-17","text":"XRP ETFはCanary・Grayscaleが$6.14M流出、Bitwiseは11/9以降ゼロフロー継続(coinotag.com、11/17)"},
     {"date":"2026-12-01","text":"Rippleの次回月次エスクローアンロックで10億XRPが解放対象に(crypto.news、11/15)"},
   ];
   // 価格に効く材料。tier は d と s から: up→good / down&s<60→warn / down&s>=60→bad
@@ -248,7 +248,7 @@
     {"date":"2026-11-08","tier":"warn","t":"地政学リスク(イラン・ホルムズ海峡タンカー攻撃)による暗号資産市場全体の急落","s":55,"d":"down","status":"新規の確度の高い進展は確認されていない。地政学リスクによる逆風継続の位置づけに変化はない(複数データソース照会、11/8 09:00)。"},
     {"date":"2026-11-15","tier":"bad","t":"CLARITY Act(米国市場構造法案)の可決可否","s":88,"d":"down","status":"24/7 Wall St等は、現行会期の法案テキストは2027/1/3までに審議を完了できなければ再提出が必要になると報道。中間選挙後の構成も踏まえ、超党派での成立は『極めて困難』との分析が続く(247wallst.com、tapbit.com、複数データソース照会、11/15)。"},
     {"date":"2026-11-19","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":62,"d":"down","status":"11/19もBTCが週末安値に接近する軟調地合いの中、XRPは$1奪回に再び失敗し$0.97台で推移。Fear&Greed指数は21と深い恐怖圏(thecryptobasic.com、複数データソース照会、11/19)。"},
-    {"date":"2026-11-19","tier":"bad","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":64,"d":"down","status":"木曜(11/19)に$1失陥、終値は$0.97台まで軟化。$0.945(火曜安値)を割れば8月安値圏の$0.60ターゲットが再浮上との分析続く(fxstreet.com、thecryptobasic.com、複数データソース照会、11/19)。"},
+    {"date":"2026-11-20","tier":"warn","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":56,"d":"down","status":"$1失陥は継続も、週足RSIは安値更新時に前回安値を下回らずブルダイバージェンスを形成、下げ勢いの鈍化を示唆。日足RSIは32で売られ過ぎ圏、$0.99〜$1.02が上値の壁(thecryptobasic.com、複数データソース照会、11/20)。"},
     {"date":"2026-11-19","tier":"warn","t":"AI大型IPO(Anthropic等)による市場流動性吸収懸念","s":45,"d":"down","status":"Anthropicが評価額$1.4兆規模でナスダック上場、SpaceX・OpenAI等含むAI関連IPOラッシュが暗号資産市場から資金を吸い上げているとの分析が広がるが、因果関係にはアナリスト間で異論もある(decrypt.co、複数データソース照会、11/19)。","desc":"AI企業の大型上場が機関投資家の資金配分先として暗号資産と競合し、短期的な資金流出・デレバレッジを招いているとの見立て。因果関係の強さは市場関係者の間でも意見が分かれる一過性の需給要因。"},
     {"date":"2026-11-16","tier":"bad","t":"レバレッジ清算・フラッシュクラッシュのリスク","s":70,"d":"down","status":"週末の急落で清算が相次いだ後、Binanceの建玉(OI)は24時間で4.5%減の$267.3Mまで縮小しレバレッジはやや後退(coincentral.com、複数データソース照会、11/16)。"},
     {"date":"2026-11-18","tier":"warn","t":"ホエール(大口保有者)の動向:ミリオネアウォレット減少・取引所残高増加で分配シグナル","s":30,"d":"down","status":"11/10以降Binanceから$127M超のXRPが流出、分配シグナルというより大口の取引所離れが優勢との見方が強まる(invezz.com、benzinga.com、複数データソース照会、11/18)。"},
@@ -270,6 +270,8 @@
   ];
   // 海外メディア。新しい順に最大10件、リンクは実在するものだけ
   const news = [
+    {"date":"2026-11-20","src":"TheCryptoBasic","sentiment":"up","quote":"週足RSIにブルダイバージェンス、下げ勢いの鈍化を示唆。","note":"thecryptobasic.comは11/20、XRPの週足RSIに前回安値を下回らないブルダイバージェンスが出現し、下落の勢いが鈍化している可能性があると報道(thecryptobasic.com、11/20)。","link":"https://thecryptobasic.com/2026/11/20/xrp-price-targets-as-bullish-weekly-rsi-divergence-emerges/"},
+    {"date":"2026-11-20","src":"TheCryptoBasic","sentiment":"neutral","quote":"大口トレーダー、将来$10到達の可能性に言及も$1では買わず。","note":"thecryptobasic.comは11/20、大口トレーダーがXRPの長期的な$10到達の可能性を示唆しつつ、現在の$1近辺では新規購入を見送るとの見解を報じた(thecryptobasic.com、11/20)。","link":"https://thecryptobasic.com/2026/11/20/top-trader-says-xrp-could-eventually-reach-10-but-refuses-to-buy-at-1-heres-why"},
     {"date":"2026-11-19","src":"TheCryptoBasic","sentiment":"down","quote":"BTCは週末安値ぎりぎりで踏みとどまるが、XRPは$1を再び失う。","note":"thecryptobasic.comは11/19、ビットコインが週末安値からわずか$30の水準で踏みとどまる一方、XRPは$1を再度失ったと報道(thecryptobasic.com、11/19)。","link":"https://thecryptobasic.com/2026/11/19/crypto-price-analysis-btc-xrp-vvv-lit-and-hype-nov-19-bitcoin-stops-30-above-its-weekend-low-as-xrp-gives-up-1/"},
     {"date":"2026-11-19","src":"Decrypt","sentiment":"down","quote":"Anthropic上場控えBTC急落、AI大型IPOが資金吸収との見方。","note":"decrypt.coは、Anthropicの新規上場(評価額$1.4兆規模)を前にビットコインが急落したと報道、AI企業の大型IPOが暗号資産市場の流動性を吸収しているとの分析に対しアナリストの間で異論もあると伝えた(decrypt.co、11/19)。","link":"https://decrypt.co/383551/bitcoin-tanks-ahead-anthropics-ipo-should-we-really-blame-ai"},
     {"date":"2026-11-19","src":"FXStreet","sentiment":"down","quote":"$1拒否で$0.965割れ、ファンディングはマイナス転換。","note":"fxstreet.comは11/19、XRPが$1の心理的節目で拒否された後$0.965を割り込んで取引されていると報道、先物ファンディングレートもマイナスに転じショート優勢を示したと伝えた(fxstreet.com、11/19)。","link":"https://www.fxstreet.com/cryptocurrencies/news/ripple-and-stellar-outlook-weakening-market-signals-put-xrp-and-xlm-at-risk-202611190341"},
@@ -278,8 +280,6 @@
     {"date":"2026-11-18","src":"Invezz","sentiment":"up","quote":"ホエールのBinance大量流出が支え、XRPが一時$1を回復。","note":"invezz.comは11/18、11/10以降のBinanceからのホエール流出が$127M超に達し、XRPが一時$1を回復したと報道(invezz.com、11/18)。","link":"https://invezz.com/news/2026/11/18/xrp-reclaims-1-aided-by-massive-binance-whale-withdrawals/"},
     {"date":"2026-11-18","src":"Benzinga","sentiment":"up","quote":"ホエールのBinance流出$127M超、むしろ好材料との分析。","note":"benzinga.comは11/18、Binanceからのホエール流出$127M超は売り圧力後退を示す可能性があると報道(benzinga.com、11/18)。","link":"https://www.benzinga.com/crypto/cryptocurrency/26/11/63338880/xrp-whale-outflows-hit-127m-on-binance-that-may-be-good-news"},
     {"date":"2026-11-18","src":"CoinGape","sentiment":"down","quote":"$1手前で停滞、買い継続には懐疑的な声も。","note":"coingape.comは11/18、ホエール流出だけでは買いが続くか不透明とし$1近辺での一進一退が続くと報道(coingape.com、11/18)。","link":"https://coingape.com/markets/xrp-price-hovers-below-1-as-whales-pull-millions-from-binance-will-buyers-step-in/"},
-    {"date":"2026-11-18","src":"COINOTAG","sentiment":"neutral","quote":"5日ぶりに一時$1を回復も短時間で終える。","note":"en.coinotag.comは11/18、XRPが11/13以来初めて一時$1を回復したが終値には届かなかったと報道(en.coinotag.com、11/18)。","link":"https://en.coinotag.com/xrp-briefly-reclaims-1-first-time-in-five-days"},
-    {"date":"2026-11-18","src":"99Bitcoins","sentiment":"down","quote":"$1回復もブレイクアウト失敗率50%の壁が残る。","note":"99bitcoins.comは11/18、過去のXRPブレイクアウトの約半数が48時間以内に失敗しており今回も同様のリスクがあると報道(99bitcoins.com、11/18)。","link":"https://99bitcoins.com/news/altcoins/xrp-price-reclaims-1-can-it-break-50-fail-rate-for-xrp-breakouts-in-2026/"},
   ];
   // 保有と計画。xrp / avgCost / executed / cashJpy / ladderNo はユーザーの申告値なので、指示なしに変えない。
   // ルーティンが更新してよいのは buyZone と stopLine だけ。
