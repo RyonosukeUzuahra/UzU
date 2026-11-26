@@ -218,21 +218,21 @@
 (function(){
   // ===== DATA: 日次ルーティンが書き換えるのはこのブロックだけ =====
   // 文章は毎回「置き換え」る。日時の見出しを付けて前回分に書き足さない。
-  const UPDATED = "2026-11-26 03:08";   // JST
+  const UPDATED = "2026-11-26 09:09";   // JST
   // ライブ取得(CoinGecko)に失敗したときだけ使う値
-  const MARKET = { price: 0.92, chg24h: null, chg7d: null };
+  const MARKET = { price: 0.90, chg24h: null, chg7d: null };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
-  const STANCE = "XRPは$0.91〜$0.93で$1割れ継続、取引所流入拡大と市場全体の軟調で戻りは鈍い。12/1エスクロー解放も控え上値重い。";
+  const STANCE = "XRPは$0.89〜$0.92まで下げ$1割れ継続、日足RSIは29台と売られ過ぎ圏だが戻りは鈍い。12/1エスクロー解放も上値重い。";
   // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
   const CLAUDE_VIEW = {
-    at: "2026-11-26 03:08", stance: "down",
-    head: "$0.89〜$0.95の支持帯で足踏み継続、$0.985〜$1.035を奪回するまで戻りは鈍い",
+    at: "2026-11-26 09:09", stance: "down",
+    head: "$0.89〜$0.95の支持帯で下値模索継続、$0.9548奪回まで戻りは鈍い",
     reasons: [
-      "複数ソースで$0.91〜$0.93帯が確認され、$0.9548前後の壁は依然超えられていない",
-      "CLARITY法案は9/15の採決不成立から進展なく、制度面の追い風は乏しいまま",
-      "直近の新規ETF流入やホエールの買い戻しを示す確証も見つからず様子見が優勢",
+      "日足RSIは29台まで低下し売られ過ぎ圏、短期的な自律反発の余地はある",
+      "50日線が200日線を下回るデスクロスが11/21に発生し中期トレンドは下向き",
+      "CLARITY法案は9/15の採決不成立から進展なく、ETF資金流入も鈍いまま",
     ],
-    risk: "$0.89割れで次は$0.85〜$0.84のゾーン、さらに崩れれば二番底探りが再燃するおそれ",
+    risk: "$0.89割れが続けば次は$0.85、さらに崩れれば$0.80の警戒ラインに近づくおそれ",
   };
   // 今週の重要イベント。新しい順に最大5件
   const EVENTS = [
@@ -248,7 +248,7 @@
     {"date":"2026-11-08","tier":"warn","t":"地政学リスク(イラン・ホルムズ海峡タンカー攻撃)による暗号資産市場全体の急落","s":55,"d":"down","status":"新規の確度の高い進展は確認されていない。地政学リスクによる逆風継続の位置づけに変化はない(複数データソース照会、11/8 09:00)。"},
     {"date":"2026-11-15","tier":"bad","t":"CLARITY Act(米国市場構造法案)の可決可否","s":88,"d":"down","status":"24/7 Wall St等は、現行会期の法案テキストは2027/1/3までに審議を完了できなければ再提出が必要になると報道。中間選挙後の構成も踏まえ、超党派での成立は『極めて困難』との分析が続く(247wallst.com、tapbit.com、複数データソース照会、11/15)。"},
     {"date":"2026-11-25","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":62,"d":"down","status":"BTC・ETH・XRPが揃って直近安値圏の支持線を試す展開、暗号資産市場全体の軟調が継続(tradingpedia.com、複数データソース照会、11/25)。"},
-    {"date":"2026-11-25","tier":"warn","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":55,"d":"down","status":"$0.91〜$0.93で停滞し$0.9548・$0.9794が上値の壁に。取引所への流入拡大も新たな警戒材料(cryptonews.net、crypto.news、複数データソース照会、11/25)。"},
+    {"date":"2026-11-25","tier":"warn","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":58,"d":"down","status":"$0.89〜$0.92まで下落、日足RSIは29台と売られ過ぎ圏だが$0.9548の壁は超えられず(marketalleys.com、cryptonews.net、複数データソース照会、11/25)。"},
     {"date":"2026-11-22","tier":"warn","t":"XRPレジャーのオンチェーン活動(アクティブユーザー数)の急減","s":42,"d":"down","status":"アクティブユーザー数が25万から9.2万へ約60%急減とXRPScanデータで報告。価格反発下での実需の弱さを示すシグナル(bitcoinfoundation.org、U.Today、11/22)。","desc":"オンチェーンのアクティブユーザー数は投機的トレーディング量と独立した実需の代理指標。価格が安値から戻す局面でのユーザー数急減は、戻りが実需ではなく短期トレーダー主導であることを示唆する。"},
     {"date":"2026-11-19","tier":"warn","t":"AI大型IPO(Anthropic等)による市場流動性吸収懸念","s":45,"d":"down","status":"Garlinghouse氏は11/19CNBCで、Anthropic IPOへの資金シフトは一時的とし、SpaceX上場後のBTC反発同様の暗号資産回復を予想。因果関係には他のアナリストから異論もある(decrypt.co、crypto.news、複数データソース照会、11/19)。","desc":"AI企業の大型上場が機関投資家の資金配分先として暗号資産と競合し、短期的な資金流出・デレバレッジを招いているとの見立て。因果関係の強さは市場関係者の間でも意見が分かれる一過性の需給要因。"},
     {"date":"2026-11-20","tier":"bad","t":"レバレッジ清算・フラッシュクラッシュのリスク","s":70,"d":"down","status":"週末の急落でロング$44M相当が清算され過去13ヶ月で最大規模に。過剰レバレッジは一巡した可能性(thecryptobasic.com、複数データソース照会、11/20)。"},
@@ -274,13 +274,13 @@
     {"date":"2026-11-25","src":"TradingPedia","sentiment":"down","quote":"BTC・ETH・XRPが揃って安値圏の支持線を試す展開、市場全体が軟調。","note":"tradingpedia.comは11/25、ビットコイン・イーサリアム・XRPが揃って直近安値圏の支持線を試す展開となり、暗号資産市場全体が軟調だと報道した(tradingpedia.com、11/25)。","link":"https://www.tradingpedia.com/2026/11/25/crypto-majors-slide-as-btc-eth-xrp-test-support/"},
     {"date":"2026-11-25","src":"Crypto.news","sentiment":"down","quote":"取引所への流入拡大が重荷に、XRPは$0.91台で戻り鈍い。","note":"crypto.newsは11/25、XRPの取引所への流入が拡大し売り圧力への警戒が強まる中、価格は$0.91台で推移し戻りは鈍いと報道した(crypto.news、11/25)。","link":"https://crypto.news/xrp-price-prediction-exchange-inflows-etf-outflows/"},
     {"date":"2026-11-25","src":"CryptoNews.net","sentiment":"down","quote":"週間下降トレンドが深まる、$0.9548奪回が次の分水嶺。","note":"cryptonews.netは11/25、XRPの週間下降トレンドが深まっており$0.9548の奪回が次の方向性を決める分水嶺になると報道した(cryptonews.net、11/25)。","link":"https://cryptonews.net/news/analytics/33796542/"},
+    {"date":"2026-11-25","src":"MarketAlleys","sentiment":"down","quote":"24時間で3.44%下落、日足RSIは29.4と売られ過ぎ圏に。","note":"marketalleys.comは11/25、XRPが24時間で3.44%下落し$0.915前後まで下げ、日足RSI(14)が29.4と売られ過ぎ圏に入ったと報じた(marketalleys.com、11/25)。","link":"https://www.marketalleys.com/post/xrp-falls-3-44-over-24-hours-rsi-14-29-4-2026-11-25"},
     {"date":"2026-11-24","src":"TheCryptoBasic","sentiment":"up","quote":"週足RSIブルダイバージェンス継続、$0.87から反発し$1.09奪回に注目。","note":"thecryptobasic.comは11/24、XRPがフィボナッチ38.2%戻し付近の$0.87から反発し週足RSIのブルダイバージェンスが継続、$1.03・$1.09の奪回が次の試練になると報道した(thecryptobasic.com、11/24)。","link":"https://thecryptobasic.com/2026/11/24/time-for-xrp-departure-as-bullish-divergence-puts-1-09-in-focus/"},
     {"date":"2026-11-24","src":"Invezz","sentiment":"down","quote":"ファンディングレートが負転換、さらに25%下落のシナリオも。","note":"invezz.comは11/24、無期限先物のファンディングレートが負に転じショート優勢の中、さらに約25%下落するシナリオも排除できないと報道した(invezz.com、11/24)。","link":"https://invezz.com/news/2026/11/24/xrp-price-prediction-could-investors-face-another-25-crash/"},
     {"date":"2026-11-23","src":"24/7 Wall St","sentiment":"down","quote":"50日線が200日線を下回るデスクロス形成、節目は$1.00〜$1.05。","note":"247wallst.comは11/23、XRPの50日移動平均が200日移動平均を11/21に下回るデスクロスを形成したと報道、直近の節目は$1.00〜$1.05、下は$0.90と$0.85、上は50/200日線が位置する$1.22〜$1.24と伝えた(247wallst.com、11/23)。","link":"https://247wallst.com/investing/cryptocurrency/2026/11/23/xrp-just-formed-a-death-cross-what-it-means-and-the-levels-to-watch/"},
     {"date":"2026-11-23","src":"CoinCentral","sentiment":"up","quote":"週末急落後、週足RSIに初のブルダイバージェンスで反発シグナル。","note":"coincentral.comは11/23、XRPが週末の急落後に週足RSIで前回安値を下回らない初のブルダイバージェンスを示し、$0.86の安値から$0.93台へ反発、$1近辺を試す可能性があると報道した(coincentral.com、11/23)。","link":"https://coincentral.com/xrp-price-eyes-1-as-analyst-spots-first-bullish-signal-after-weekend-crash"},
     {"date":"2026-11-23","src":"Coin-Turk","sentiment":"neutral","quote":"ホエールがBinanceから$127M超撤退、16ヶ月続いた流入トレンドが反転。","note":"en.coin-turk.comは11/23、XRPホエールが11/10以降Binanceから$127M超を撤退させ、16ヶ月続いていた流入トレンドが反転したと報道、取引所残高は2年ぶりの低水準に落ち込んだと伝えた(en.coin-turk.com、11/23)。","link":"https://en.coin-turk.com/xrp-whales-withdraw-127-million-from-binance-as-16-month-inflow-trend-reverses/"},
     {"date":"2026-11-23","src":"KuCoin","sentiment":"neutral","quote":"$0.9548の奪回が下降トレンド反転の鍵に。","note":"kucoin.comは11/23、XRPが下降トレンドを反転させるには$0.9548の奪回が鍵になるとテクニカル分析を報道した(kucoin.com、11/23)。","link":"https://www.kucoin.com/news/flash/xrp-price-analysis-0-9548-resistance-key-to-reversing-downtrend"},
-    {"date":"2026-11-23","src":"CoinMarketCap AI","sentiment":"down","quote":"XRPは$0.9382、月間27%超安。弱気シグナル優勢で支持$0.89・抵抗$1.01。","note":"CoinMarketCapのAI分析は11/23、XRPが$0.9382で取引され直近1ヶ月で27%超下落、テクニカル指標は弱気優勢で支持線$0.89・上値抵抗$1.01と報告した(coinmarketcap.com、11/23)。","link":"https://coinmarketcap.com/cmc-ai/xrp/price-analysis/"},
   ];
   // 保有と計画。xrp / avgCost / executed / cashJpy / ladderNo はユーザーの申告値なので、指示なしに変えない。
   // ルーティンが更新してよいのは buyZone と stopLine だけ。
