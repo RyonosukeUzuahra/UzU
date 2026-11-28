@@ -218,26 +218,26 @@
 (function(){
   // ===== DATA: 日次ルーティンが書き換えるのはこのブロックだけ =====
   // 文章は毎回「置き換え」る。日時の見出しを付けて前回分に書き足さない。
-  const UPDATED = "2026-11-28 03:10";   // JST
+  const UPDATED = "2026-11-28 10:30";   // JST
   // ライブ取得(CoinGecko)に失敗したときだけ使う値
-  const MARKET = { price: 0.97, chg24h: 2.1, chg7d: null };
+  const MARKET = { price: 0.96, chg24h: null, chg7d: null };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
-  const STANCE = "XRPは$0.97まで反発もETF流入は細く$0.99〜$1.00の壁は未奪回。方向感は依然不透明。";
+  const STANCE = "XRPは$0.95前後で停滞。ETF資産は$1B割れ、恐怖指数も安値圏で$1.00奪回より下方リスクが優勢。";
   // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
   const CLAUDE_VIEW = {
-    at: "2026-11-28 03:10", stance: "neutral",
-    head: "$0.97まで反発も$1.00の壁は厚く、ETF流入細くCLARITY法も停滞で中期は不透明",
+    at: "2026-11-28 10:30", stance: "down",
+    head: "恐怖指数が9前後まで悪化、ETF資産も$1B割れ。$1.00奪回より$0.80試しのリスクが先行",
     reasons: [
-      "ETF資金流入はわずか$4M規模、月間ネットはなお流出優勢",
-      "50日線が200日線を下回るデスクロス継続、中期トレンドは下向き",
-      "CLARITY法はレームダック通過の目算薄く、Moreno上院議員も確率『ゼロ』と明言",
+      "XRP ETF資産は11月の流出$30.8Mで$989Mまで縮小、$1B割れが定着",
+      "Fear & Greed指数が9前後と2月以来の安値圏、Polymarketは$0.80到達に54%",
+      "CLARITY法は9/15の採決不成立のまま停滞、年内成立の市場予想は6.5%",
     ],
-    risk: "$0.92の支持を割れば11/21安値$0.86、さらに崩れれば$0.80の警戒ラインに近づくおそれ",
+    risk: "$0.92〜$0.95の支持を割れば$0.86、さらに崩れれば$0.80試しへ下値リスクが拡大するおそれ",
   };
   // 今週の重要イベント。新しい順に最大5件
   const EVENTS = [
-    {"date":"2026-11-27","text":"XRPが$0.97付近まで反発(24h+2%台)、$0.99〜$1.00の壁は未奪回(blockchain.news、11/27)"},
-    {"date":"2026-11-26","text":"Franklin TempletonのXRP ETF(XRPZ)に$4.07M流入、月間流出が続く中で唯一プラス(coinalertnews.com、coinpaper.com、11/26)"},
+    {"date":"2026-11-27","text":"XRPは$0.97前後、恐怖指数9前後まで悪化、Polymarketは$0.80到達に54%(news.bitcoin.com、coinjournal.net、11/27)"},
+    {"date":"2026-11-25","text":"XRP ETF資産が$1B割れの$989Mに縮小、11月の累計流出は$30.8M(en.coin-turk.com、11/25)"},
     {"date":"2026-11-23","text":"50日線が200日線を下回るデスクロスが11/21に発生、節目は上$1.00〜$1.05・下$0.90〜$0.85(247wallst.com、11/23)"},
     {"date":"2026-11-19","text":"主導役のMoreno上院議員、CLARITY法のレームダック内可決確率を『ゼロ』と明言(theblock.co、11/19)"},
     {"date":"2026-12-01","text":"Rippleの次回月次エスクローアンロックで10億XRPが解放対象に(crypto.news、11/15)"},
@@ -247,16 +247,16 @@
     {"date":"2026-11-04","tier":"warn","t":"Binance推定$58億〜$60億規模のハッキング疑惑による暗号資産市場全体の急落(史上最大規模の可能性)","s":25,"d":"down","status":"Binanceは11/4時点で被害資産の約98%を補填完了と発表、XRP含む主要資産の出金も段階的に再開済みで事件は収束局面入り(saharareporters.com、複数データソース照会、11/4)。","desc":"XRP固有の脆弱性ではなく、Binanceという特定の中央集権型取引所の鍵管理・コールドウォレット運用に起因する事件とみられ、XRPレジャー自体のプロトコルは侵害されていない。ただし業界最大手取引所での大規模流出は暗号資産全体のカウンターパーティリスク・取引所経由保有のリスクを再認識させる材料であり、短期的な価格・流動性への影響(出金停止によるXRPの取引所間アービトラージ阻害、ホエールの取引所離れ加速など)は無視できない。被害総額・Binanceの補償能力・SAFU基金の対応次第で、市場の受け止めは大きく変わる可能性がある。"},
     {"date":"2026-11-08","tier":"warn","t":"地政学リスク(イラン・ホルムズ海峡タンカー攻撃)による暗号資産市場全体の急落","s":55,"d":"down","status":"新規の確度の高い進展は確認されていない。地政学リスクによる逆風継続の位置づけに変化はない(複数データソース照会、11/8 09:00)。"},
     {"date":"2026-11-19","tier":"bad","t":"CLARITY Act(米国市場構造法案)の可決可否","s":88,"d":"down","status":"主導役のMoreno上院議員はレームダック内の可決確率を問われ『ゼロ』と明言、Hill下院議員もこの数週での成立に楽観的ではないと回答。規制当局の権限行使の是非では両者の見解が分かれると報道(theblock.co、複数データソース照会、11/19)。"},
-    {"date":"2026-11-26","tier":"warn","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":55,"d":"down","status":"暗号資産ファンド全体への資金流出は続くものの、BTC・ETH・XRPは直近安値圏から小幅に反発(fxstreet.com、tradingpedia.com、複数データソース照会、11/26)。"},
-    {"date":"2026-11-27","tier":"warn","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":50,"d":"down","status":"ETF資金流入の下支えで$0.97付近まで反発、抵抗$0.99〜$1.00・支持$0.95〜$0.92。50日線$1.17・200日線$1.23は依然遠い(blockchain.news、複数データソース照会、11/27)。"},
+    {"date":"2026-11-27","tier":"bad","t":"マクロ環境(米CPI上振れ・FRB利上げ観測・BTC相場全体)","s":62,"d":"down","status":"BTCが$60,000を割り込み、恐怖指数も9前後まで悪化、暗号資産市場全体が軟調(fool.com、coinjournal.net、複数データソース照会、11/27)。"},
+    {"date":"2026-11-27","tier":"warn","t":"テクニカル(短期トレンド・移動平均・デリバティブ)","s":55,"d":"down","status":"$0.95〜$0.97で推移、Polymarketは$0.80到達に54%。抵抗$0.99〜$1.00・支持$0.95〜$0.92は不変(news.bitcoin.com、tokenpost.com、複数データソース照会、11/27)。"},
     {"date":"2026-11-22","tier":"warn","t":"XRPレジャーのオンチェーン活動(アクティブユーザー数)の急減","s":42,"d":"down","status":"アクティブユーザー数が25万から9.2万へ約60%急減とXRPScanデータで報告。価格反発下での実需の弱さを示すシグナル(bitcoinfoundation.org、U.Today、11/22)。","desc":"オンチェーンのアクティブユーザー数は投機的トレーディング量と独立した実需の代理指標。価格が安値から戻す局面でのユーザー数急減は、戻りが実需ではなく短期トレーダー主導であることを示唆する。"},
     {"date":"2026-11-19","tier":"warn","t":"AI大型IPO(Anthropic等)による市場流動性吸収懸念","s":45,"d":"down","status":"Garlinghouse氏は11/19CNBCで、Anthropic IPOへの資金シフトは一時的とし、SpaceX上場後のBTC反発同様の暗号資産回復を予想。因果関係には他のアナリストから異論もある(decrypt.co、crypto.news、複数データソース照会、11/19)。","desc":"AI企業の大型上場が機関投資家の資金配分先として暗号資産と競合し、短期的な資金流出・デレバレッジを招いているとの見立て。因果関係の強さは市場関係者の間でも意見が分かれる一過性の需給要因。"},
     {"date":"2026-11-20","tier":"bad","t":"レバレッジ清算・フラッシュクラッシュのリスク","s":70,"d":"down","status":"週末の急落でロング$44M相当が清算され過去13ヶ月で最大規模に。過剰レバレッジは一巡した可能性(thecryptobasic.com、複数データソース照会、11/20)。"},
     {"date":"2026-11-23","tier":"warn","t":"ホエール(大口保有者)の動向:ミリオネアウォレット減少・取引所残高増加で分配シグナル","s":30,"d":"down","status":"11/10以降Binanceから$127M超の流出が続き16ヶ月続いた流入トレンドが反転、取引所残高は2年ぶり低水準に。取引所売却の兆候はなく保管シフトとの見方(en.coin-turk.com、複数データソース照会、11/23)。"},
-    {"date":"2026-11-26","tier":"good","t":"現物XRP ETFへの資金流入 & SEC規制明確化","s":18,"d":"up","status":"Franklin TempletonのXRPZ主導で11/25に$4.07M流入、4週続いた流出が一旦止まったが月間ネットはなお流出優勢(coinalertnews.com、coinpaper.com、複数データソース照会、11/26)。"},
+    {"date":"2026-11-25","tier":"good","t":"現物XRP ETFへの資金流入 & SEC規制明確化","s":25,"d":"up","status":"11/25に$4.07M流入(10カテゴリー中唯一プラス)も、月間ネットは$30.8M流出で資産は$1B割れの$989Mに縮小(en.coin-turk.com、bitcoinworld.co.in、複数データソース照会、11/25)。"},
     {"date":"2026-09-17","tier":"good","t":"Ripple、Stripe/TempoのAIエージェント決済標準をXRP開発者キットに追加","s":22,"d":"up","status":"coindesk.com・en.coin-turk.com・kucoin.comは9/17、RippleがXRPレジャー向け開発者キット『XRPL AIスターターキット』をバージョン1.1へ更新し、StripeとTempoが策定したMachine Payments Protocol(MPP)・Open Wallet Standardに対応したと報道、AIエージェントがデータ・計算資源などのオンラインサービスへの支払いをXRP・RLUSDで行えるようになったと伝えた。ベータ版は秘密鍵にアクセスせず支払い上限・承認済み送金先などの制御を可能にするOpen Wallet Standard統合を備え、AnthropicのClaudeなどAIシステムとの連携も想定していると伝えた(coindesk.com、en.coin-turk.com、kucoin.com、9/17)。","desc":"AIエージェント同士の自動決済(マシンペイメント)分野でのXRP・RLUSD採用を広げる開発者向け基盤整備であり、即座の価格材料ではないが、決済ユースケースの裾野拡大を示す実需インフラ整備の一例として位置づけられる。ソフトウェアは現時点でベータ・テスト段階。"},
     {"date":"2026-10-28","tier":"good","t":"XRPレジャーの決済実需とネットワーク収益構造","s":64,"d":"up","status":"kucoin.com・cryptobriefing.com・coinpaper.com・cryptoslate.comは10/28、Ripple Swell 2026(NYC)でRippleが決済・カストディ・ステーブルコイン・プライムブローカレッジ・トレジャリー事業の拡大により2026年末までに年率$900M規模の製品収益ランレートを見込むと発表したと報道。連携する機関・企業数は年初から3倍の1,700超に達し、RLUSDの市場規模は$2.6Bに達したという。なお同時期の報道はXRP価格が年初来で約-28.8%下落と対比的に伝えている(ランレートは実現済み収益ではない点に留意)(kucoin.com、cryptobriefing.com、複数データソース照会、10/30 03:00)。"},
-    {"date":"2026-11-17","tier":"good","t":"RLUSD / Open USD ステーブルコイン拡大","s":62,"d":"up","status":"RLUSDがPYUSDを上回り流通量$2.7B超でドルステーブルコイン7位に浮上(bitcoin.com、cryptobriefing.com、複数データソース照会、11/17)。"},
+    {"date":"2026-11-20","tier":"good","t":"RLUSD / Open USD ステーブルコイン拡大","s":60,"d":"up","status":"RLUSD流通量は$2.69B規模を維持、BinanceがRLUSD保有者向けに60万XRP配布キャンペーンを11/20開始(coinpaper.com、複数データソース照会、11/20)。"},
     {"date":"2026-11-15","tier":"warn","t":"エスクロー月次アンロック(10/1実施済・2026年10本目・10億XRP)","s":33,"d":"down","status":"11/1のアンロックに続き、次回は12/1に10億XRPが解放対象となる予定(crypto.news、複数データソース照会、11/15)。"},
     {"date":"2026-11-12","tier":"good","t":"Rippleの新クレジット事業、XRPを担保にしたレンディング(2027年稼働予定)","s":40,"d":"up","status":"altcoinbuzz.io等は11/12時点で、LendingProtocol/SingleAssetVaultのバリデーター投票がそれぞれ22票・23票(必要29票)まで進展、稼働まであと7票・6票と報道。承認に向けた動きは継続中(altcoinbuzz.io、複数データソース照会、11/12)。24/7 Wall Stは10/19、Rippleが進めるXRPL上のレンディング機能拡張(XLS-66/65関連アップグレード)についてバリデーター投票が29票中19票の賛成にとどまり、承認に必要な水準まであと10票不足していると報じた。可決時期は依然不透明だが、制度化に向けた動き自体は継続しているとみられる(247wallst.com、10/19)。kucoin.com・thecoinrepublic.com・coinpedia.orgは10/3、Ripple社長Monica Long氏がXRP Seoul 2026で、XRPをレンディングプール内の担保として用い決済事業者(マネートランスファー企業等)向けの短期クレジットを提供する新事業を2027年に稼働させる計画を明らかにしたと報道、『活性化を目標に信用関連のパイロットを運用中』と発言、Ripple・Clearpool・CicadaがXRPL上のレンディング市場(機関投資家向け・RLUSD関連)を試験運用していると伝えた(kucoin.com、thecoinrepublic.com、coinpedia.org、247wallst.com、10/3)。247wallst.comは10/4、この仕組みはXRPが決済を素早く通過して循環に戻る従来のブリッジ資産的役割とは異なり、担保としてプールに留まり続ける長期的な需要源になり得ると分析、もっとも稼働は2027年以降であり即座の価格材料ではないとも伝えた(247wallst.com、10/4)。"},
     {"date":"","tier":"warn","t":"銀行がXRPでなくRLUSD/法定通貨で決済する傾向","s":55,"d":"down","status":"構造的懸念・継続","desc":"大手銀がRippleNet経由でもRLUSD・フィアットを選好との分析。「XRP=ブリッジ資産」テーゼ最大のリスク。ただしRLUSD自体の流通量も5月ピークから約20%減と調整局面に入っており、代替リスクの短期的な進行速度はやや不透明。"},
@@ -271,16 +271,15 @@
   ];
   // 海外メディア。新しい順に最大10件、リンクは実在するものだけ
   const news = [
-    {"date":"2026-11-27","src":"Blockchain.News","sentiment":"up","quote":"ETF流入で弱いチャートに一息、$0.97まで反発も壁は厚い。","note":"blockchain.newsは11/27、XRPがETF資金流入の小幅な好転を背景に$0.97付近まで反発したが、50日線$1.17・200日線$1.23を下回る弱いトレンドが続くと報道した(blockchain.news、11/27)。","link":"https://blockchain.news/news/20261127-price-prediction-xrp-etf-inflows-brighten-a-weak-tape"},
-    {"date":"2026-11-26","src":"CoinAlertNews","sentiment":"up","quote":"XRP ETFsが唯一の資金流入、Franklin Templetonが$4M追加。","note":"coinalertnews.com・coinpaper.comは11/26、10種の暗号資産ETFカテゴリーの中でXRPのみが資金流入を記録、Franklin TempletonのXRPZに$4.07M流入したと報道した(coinalertnews.com、coinpaper.com、11/26)。","link":"https://coinalertnews.com/news/2026/11/26/xrp-only-crypto-etf-inflows"},
-    {"date":"2026-11-26","src":"CoinCentral","sentiment":"up","quote":"ETF資金流入が再開、売り圧力後退で早期の強気シグナル。","note":"coincentral.comは11/26、数週間続いた売り圧力の後退とETF資金流入再開を背景にXRPに早期の強気シグナルが出ていると報道、抵抗は$0.96〜$0.98と$1.00、支持は$0.93・$0.90と伝えた(coincentral.com、11/26)。","link":"https://coincentral.com/xrp-price-shows-early-bullish-signals-as-etf-inflows-return-after-weeks-of-selling"},
-    {"date":"2026-11-26","src":"FXStreet","sentiment":"up","quote":"ディップを買う動きで上昇、リテール需要も改善。","note":"fxstreet.comは11/26、XRPがディップを買う動きとETF資金流入再開、リテール需要の改善を背景に上昇していると報道した(fxstreet.com、11/26)。","link":"https://www.fxstreet.com/cryptocurrencies/news/ripple-price-forecast-xrp-rises-as-bulls-buy-the-dip-etf-inflows-return-and-retail-demand-improves-202611261200"},
-    {"date":"2026-11-26","src":"TradingPedia","sentiment":"up","quote":"リップル・ステラが上昇、売り圧力が後退。","note":"tradingpedia.comは11/26、RippleとStellarが上昇し、ここ数日続いた売り圧力が後退していると報道した(tradingpedia.com、11/26)。","link":"https://www.tradingpedia.com/2026/11/26/ripple-and-stellar-edge-up-as-selling-pressure-eases/"},
-    {"date":"2026-11-26","src":"COINOTAG","sentiment":"up","quote":"対ビットコインでゴールデンクロス形成、$0.92付近。","note":"en.coinotag.comは11/26、XRPが対ビットコインでゴールデンクロスを形成し$0.92付近で推移、抵抗$0.9562・支持$0.8565と報道した(en.coinotag.com、11/26)。","link":"https://en.coinotag.com/xrp-completes-golden-cross-against-bitcoin-near-0-92"},
-    {"date":"2026-11-19","src":"The Block","sentiment":"down","quote":"主導役のMoreno議員、レームダック内の可決確率を『ゼロ』と明言。","note":"theblock.coは11/19、CLARITY法を主導する上院Moreno議員がレームダック中の成立確率を問われ『ゼロ』と回答、Hill下院議員も楽観的ではないと報道、規制当局の権限行使の是非では両者の見解が分かれると伝えた(theblock.co、11/19)。","link":"https://theblock.co/news/regulation/2026-11-19-hill-moreno-blame-delays-missed-clarity-act-window-split-regulators-fill-gap-443615"},
+    {"date":"2026-11-27","src":"Bitcoin.com","sentiment":"down","quote":"Polymarketは$0.80到達に54%、年末にかけ厳しい値動きを予想。","note":"news.bitcoin.comは11/27、XRPが$0.9738で推移する中、Polymarketの予測市場参加者が2027年までに$0.80へ到達する確率を54%とみていると報道した(news.bitcoin.com、11/27)。","link":"https://news.bitcoin.com/price-predictions/prediction-markets-paint-brutal-year-end-picture-xrp-holders/"},
+    {"date":"2026-11-27","src":"CoinJournal","sentiment":"down","quote":"恐怖指数が9まで悪化、2月以来の安値圏で$0.80への懸念。","note":"coinjournal.netは11/27、暗号資産市場のFear & Greed指数が9まで低下し2月以来の安値圏に入ったと報道、XRPは$0.80への下落リスクが高まっていると伝えた(coinjournal.net、11/27)。","link":"https://coinjournal.net/news/xrp-risks-crashing-to-0-80-as-extreme-fear-threatens-recovery/"},
+    {"date":"2026-11-25","src":"CoinTurk","sentiment":"down","quote":"XRP ETF資産が$1B割れ、11月の流出は$30.8Mに拡大。","note":"en.coin-turk.comは11/25、XRP現物ETFの資産規模が$1Bを割り込み$989Mまで縮小、11月の累計流出額が$30.8Mに達したと報道した(en.coin-turk.com、11/25)。","link":"https://en.coin-turk.com/xrp-spot-etf-outflows-hit-30-76-million-in-november-as-price-holds-near-0-94/"},
+    {"date":"2026-11-25","src":"BitcoinWorld","sentiment":"up","quote":"XRP ETFだけが資金流入、他の暗号資産ファンドは流出。","note":"bitcoinworld.co.inは11/25、10種の暗号資産ETFカテゴリーの中でXRPのみが$4.07Mの資金流入を記録したと報道した(bitcoinworld.co.in、11/25)。","link":"https://bitcoinworld.co.in/xrp-etf-inflows-november-2026/"},
+    {"date":"2026-11-23","src":"24/7 Wall St","sentiment":"down","quote":"50日線が200日線を下回るデスクロス形成、節目は$1.00〜$1.05。","note":"247wallst.comは11/23、XRPの50日移動平均が200日移動平均を11/21に下回るデスクロスを形成したと報道、直近の節目は$1.00〜$1.05、下は$0.90と$0.85、上は50/200日線が位置する$1.22〜$1.24と伝えた(247wallst.com、11/23)。","link":"https://247wallst.com/investing/cryptocurrency/2026/11/23/xrp-just-formed-a-death-cross-what-it-means-and-the-levels-to-watch/"},
     {"date":"2026-11-24","src":"TheCryptoBasic","sentiment":"up","quote":"週足RSIブルダイバージェンス継続、$0.87から反発し$1.09奪回に注目。","note":"thecryptobasic.comは11/24、XRPがフィボナッチ38.2%戻し付近の$0.87から反発し週足RSIのブルダイバージェンスが継続、$1.03・$1.09の奪回が次の試練になると報道した(thecryptobasic.com、11/24)。","link":"https://thecryptobasic.com/2026/11/24/time-for-xrp-departure-as-bullish-divergence-puts-1-09-in-focus/"},
     {"date":"2026-11-24","src":"Invezz","sentiment":"down","quote":"ファンディングレートが負転換、さらに25%下落のシナリオも。","note":"invezz.comは11/24、無期限先物のファンディングレートが負に転じショート優勢の中、さらに約25%下落するシナリオも排除できないと報道した(invezz.com、11/24)。","link":"https://invezz.com/news/2026/11/24/xrp-price-prediction-could-investors-face-another-25-crash/"},
-    {"date":"2026-11-23","src":"24/7 Wall St","sentiment":"down","quote":"50日線が200日線を下回るデスクロス形成、節目は$1.00〜$1.05。","note":"247wallst.comは11/23、XRPの50日移動平均が200日移動平均を11/21に下回るデスクロスを形成したと報道、直近の節目は$1.00〜$1.05、下は$0.90と$0.85、上は50/200日線が位置する$1.22〜$1.24と伝えた(247wallst.com、11/23)。","link":"https://247wallst.com/investing/cryptocurrency/2026/11/23/xrp-just-formed-a-death-cross-what-it-means-and-the-levels-to-watch/"},
+    {"date":"2026-11-20","src":"Coinpaper","sentiment":"neutral","quote":"BinanceがRLUSD保有者向けに60万XRP配布キャンペーンを開始。","note":"coinpaper.comは11/20、BinanceがRLUSD保有者向けに週次配布・最大1.3倍ボーナス付きで60万XRPを配布するキャンペーンを開始したと報道した(coinpaper.com、11/20)。","link":"https://coinpaper.com/39057/binance-launches-600-000-xrp-reward-campaign-for-ripple-s-rlusd-holders"},
+    {"date":"2026-11-19","src":"The Block","sentiment":"down","quote":"主導役のMoreno議員、レームダック内の可決確率を『ゼロ』と明言。","note":"theblock.coは11/19、CLARITY法を主導する上院Moreno議員がレームダック中の成立確率を問われ『ゼロ』と回答、Hill下院議員も楽観的ではないと報道、規制当局の権限行使の是非では両者の見解が分かれると伝えた(theblock.co、11/19)。","link":"https://theblock.co/news/regulation/2026-11-19-hill-moreno-blame-delays-missed-clarity-act-window-split-regulators-fill-gap-443615"},
   ];
   // 保有と計画。xrp / avgCost / executed / cashJpy / ladderNo はユーザーの申告値なので、指示なしに変えない。
   // ルーティンが更新してよいのは buyZone と stopLine だけ。
