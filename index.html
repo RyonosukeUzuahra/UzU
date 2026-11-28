@@ -218,19 +218,19 @@
 (function(){
   // ===== DATA: 日次ルーティンが書き換えるのはこのブロックだけ =====
   // 文章は毎回「置き換え」る。日時の見出しを付けて前回分に書き足さない。
-  const UPDATED = "2026-11-28 10:30";   // JST
+  const UPDATED = "2026-11-28 20:10";   // JST
   // ライブ取得(CoinGecko)に失敗したときだけ使う値
   const MARKET = { price: 0.96, chg24h: null, chg7d: null };
   // 今の判断を1〜2文(80字程度まで)。毎回まるごと置き換える
   const STANCE = "XRPは$0.95前後で停滞。ETF資産は$1B割れ、恐怖指数も安値圏で$1.00奪回より下方リスクが優勢。";
   // Claude の見立て。毎回まるごと置き換える。at は書いた時刻(JST)、stance は up / neutral / down
   const CLAUDE_VIEW = {
-    at: "2026-11-28 10:30", stance: "down",
-    head: "恐怖指数が9前後まで悪化、ETF資産も$1B割れ。$1.00奪回より$0.80試しのリスクが先行",
+    at: "2026-11-28 20:10", stance: "down",
+    head: "ETF資産細り・恐怖指数低迷・ガバナンス摩擦が重なり、反発の手がかりは乏しい",
     reasons: [
       "XRP ETF資産は11月の流出$30.8Mで$989Mまで縮小、$1B割れが定着",
       "Fear & Greed指数が9前後と2月以来の安値圏、Polymarketは$0.80到達に54%",
-      "CLARITY法は9/15の採決不成立のまま停滞、年内成立の市場予想は6.5%",
+      "CLARITY法停滞に加え保有者団体の31億XRP焼却要求にRippleは未回答",
     ],
     risk: "$0.92〜$0.95の支持を割れば$0.86、さらに崩れれば$0.80試しへ下値リスクが拡大するおそれ",
   };
@@ -257,6 +257,7 @@
     {"date":"2026-09-17","tier":"good","t":"Ripple、Stripe/TempoのAIエージェント決済標準をXRP開発者キットに追加","s":22,"d":"up","status":"coindesk.com・en.coin-turk.com・kucoin.comは9/17、RippleがXRPレジャー向け開発者キット『XRPL AIスターターキット』をバージョン1.1へ更新し、StripeとTempoが策定したMachine Payments Protocol(MPP)・Open Wallet Standardに対応したと報道、AIエージェントがデータ・計算資源などのオンラインサービスへの支払いをXRP・RLUSDで行えるようになったと伝えた。ベータ版は秘密鍵にアクセスせず支払い上限・承認済み送金先などの制御を可能にするOpen Wallet Standard統合を備え、AnthropicのClaudeなどAIシステムとの連携も想定していると伝えた(coindesk.com、en.coin-turk.com、kucoin.com、9/17)。","desc":"AIエージェント同士の自動決済(マシンペイメント)分野でのXRP・RLUSD採用を広げる開発者向け基盤整備であり、即座の価格材料ではないが、決済ユースケースの裾野拡大を示す実需インフラ整備の一例として位置づけられる。ソフトウェアは現時点でベータ・テスト段階。"},
     {"date":"2026-10-28","tier":"good","t":"XRPレジャーの決済実需とネットワーク収益構造","s":64,"d":"up","status":"kucoin.com・cryptobriefing.com・coinpaper.com・cryptoslate.comは10/28、Ripple Swell 2026(NYC)でRippleが決済・カストディ・ステーブルコイン・プライムブローカレッジ・トレジャリー事業の拡大により2026年末までに年率$900M規模の製品収益ランレートを見込むと発表したと報道。連携する機関・企業数は年初から3倍の1,700超に達し、RLUSDの市場規模は$2.6Bに達したという。なお同時期の報道はXRP価格が年初来で約-28.8%下落と対比的に伝えている(ランレートは実現済み収益ではない点に留意)(kucoin.com、cryptobriefing.com、複数データソース照会、10/30 03:00)。"},
     {"date":"2026-11-20","tier":"good","t":"RLUSD / Open USD ステーブルコイン拡大","s":60,"d":"up","status":"RLUSD流通量は$2.69B規模を維持、BinanceがRLUSD保有者向けに60万XRP配布キャンペーンを11/20開始(coinpaper.com、複数データソース照会、11/20)。"},
+    {"date":"2026-11-16","tier":"warn","t":"保有者団体によるエスクロー31.1億XRP焼却要求とRippleの対応姿勢","s":20,"d":"down","status":"保有者団体『Make XRP Great Again』が11/16、公開書簡でエスクロー保有31.1億XRPを2027年3月末までに焼却するようRippleに要求、Ripple側の公式回答は確認されていない(crypto.news、bitcoinworld.co.in、複数データソース照会、11/16)。","desc":"Rippleのエスクローはネットワークのバリデーター合意なしに単独で焼却できない設計で、要求どおりの実現は保証されない。価格への直接インパクトは限定的だが、保有者コミュニティとRippleの関係悪化を示すガバナンス面のノイズ要因として位置づけられる。"},
     {"date":"2026-11-15","tier":"warn","t":"エスクロー月次アンロック(10/1実施済・2026年10本目・10億XRP)","s":33,"d":"down","status":"11/1のアンロックに続き、次回は12/1に10億XRPが解放対象となる予定(crypto.news、複数データソース照会、11/15)。"},
     {"date":"2026-11-12","tier":"good","t":"Rippleの新クレジット事業、XRPを担保にしたレンディング(2027年稼働予定)","s":40,"d":"up","status":"altcoinbuzz.io等は11/12時点で、LendingProtocol/SingleAssetVaultのバリデーター投票がそれぞれ22票・23票(必要29票)まで進展、稼働まであと7票・6票と報道。承認に向けた動きは継続中(altcoinbuzz.io、複数データソース照会、11/12)。24/7 Wall Stは10/19、Rippleが進めるXRPL上のレンディング機能拡張(XLS-66/65関連アップグレード)についてバリデーター投票が29票中19票の賛成にとどまり、承認に必要な水準まであと10票不足していると報じた。可決時期は依然不透明だが、制度化に向けた動き自体は継続しているとみられる(247wallst.com、10/19)。kucoin.com・thecoinrepublic.com・coinpedia.orgは10/3、Ripple社長Monica Long氏がXRP Seoul 2026で、XRPをレンディングプール内の担保として用い決済事業者(マネートランスファー企業等)向けの短期クレジットを提供する新事業を2027年に稼働させる計画を明らかにしたと報道、『活性化を目標に信用関連のパイロットを運用中』と発言、Ripple・Clearpool・CicadaがXRPL上のレンディング市場(機関投資家向け・RLUSD関連)を試験運用していると伝えた(kucoin.com、thecoinrepublic.com、coinpedia.org、247wallst.com、10/3)。247wallst.comは10/4、この仕組みはXRPが決済を素早く通過して循環に戻る従来のブリッジ資産的役割とは異なり、担保としてプールに留まり続ける長期的な需要源になり得ると分析、もっとも稼働は2027年以降であり即座の価格材料ではないとも伝えた(247wallst.com、10/4)。"},
     {"date":"","tier":"warn","t":"銀行がXRPでなくRLUSD/法定通貨で決済する傾向","s":55,"d":"down","status":"構造的懸念・継続","desc":"大手銀がRippleNet経由でもRLUSD・フィアットを選好との分析。「XRP=ブリッジ資産」テーゼ最大のリスク。ただしRLUSD自体の流通量も5月ピークから約20%減と調整局面に入っており、代替リスクの短期的な進行速度はやや不透明。"},
@@ -280,6 +281,7 @@
     {"date":"2026-11-24","src":"Invezz","sentiment":"down","quote":"ファンディングレートが負転換、さらに25%下落のシナリオも。","note":"invezz.comは11/24、無期限先物のファンディングレートが負に転じショート優勢の中、さらに約25%下落するシナリオも排除できないと報道した(invezz.com、11/24)。","link":"https://invezz.com/news/2026/11/24/xrp-price-prediction-could-investors-face-another-25-crash/"},
     {"date":"2026-11-20","src":"Coinpaper","sentiment":"neutral","quote":"BinanceがRLUSD保有者向けに60万XRP配布キャンペーンを開始。","note":"coinpaper.comは11/20、BinanceがRLUSD保有者向けに週次配布・最大1.3倍ボーナス付きで60万XRPを配布するキャンペーンを開始したと報道した(coinpaper.com、11/20)。","link":"https://coinpaper.com/39057/binance-launches-600-000-xrp-reward-campaign-for-ripple-s-rlusd-holders"},
     {"date":"2026-11-19","src":"The Block","sentiment":"down","quote":"主導役のMoreno議員、レームダック内の可決確率を『ゼロ』と明言。","note":"theblock.coは11/19、CLARITY法を主導する上院Moreno議員がレームダック中の成立確率を問われ『ゼロ』と回答、Hill下院議員も楽観的ではないと報道、規制当局の権限行使の是非では両者の見解が分かれると伝えた(theblock.co、11/19)。","link":"https://theblock.co/news/regulation/2026-11-19-hill-moreno-blame-delays-missed-clarity-act-window-split-regulators-fill-gap-443615"},
+    {"date":"2026-11-16","src":"Crypto.news","sentiment":"down","quote":"保有者団体が31.1億XRPのエスクロー焼却をRippleに要求。","note":"crypto.newsは11/16、XRP保有者団体『Make XRP Great Again』がRipple CEOに公開書簡を送り、エスクロー保有31.1億XRPを2027年3月末までに焼却するよう要求したと報道した(crypto.news、11/16)。","link":"https://crypto.news/xrp-holders-demand-ripple-burn-31-1-billion-tokens-by-march-2027/"},
   ];
   // 保有と計画。xrp / avgCost / executed / cashJpy / ladderNo はユーザーの申告値なので、指示なしに変えない。
   // ルーティンが更新してよいのは buyZone と stopLine だけ。
